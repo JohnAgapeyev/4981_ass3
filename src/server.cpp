@@ -19,7 +19,7 @@
 #include <string>
 #include <iostream>
 
-#include "server.h"
+#include "headers/server.h"
 
 char buffer[MAXPACKETSIZE];
 int listenSocketTCP;
