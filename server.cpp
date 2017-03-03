@@ -66,15 +66,16 @@ void listenForPackets() {
     }
 
     char buff[MAXPACKETSIZE];
-    ssize_t nbytes;
-    int nevents;
-#pragma omp parallel shared(epollfd, ev) private(buff) 
+    ssize_t nbytes = 0;
+    int nevents = 0;
+
     for (;;) {
         if ((nevents = epoll_wait(epollfd, events, MAXEVENTS, -1)) == -1) {
             perror("epoll_wait");
             exit(1);
         }
 
+#pragma omp parallel for
         for (int i = 0; i < nevents; ++i) {
             if (events[i].events & EPOLLERR) {
                 perror("Socket error");
@@ -123,8 +124,13 @@ void listenForPackets() {
                     //Save address of new client
                     clientList.insert({ip, addr.sa_data});
                 } else {
-                    nbytes = recv(events[i].data.fd, buff, MAXPACKETSIZE, 0);
-
+                    while ((nbytes = recv(events[i].data.fd, buff, MAXPACKETSIZE, 0)) > 0) {
+#pragma omp task
+                        {
+                            send(events[i].data.fd, buff, nbytes, 0);
+                            processPacket(buff);
+                        }
+                    }
                     if (nbytes == -1) {
                         if (errno == EAGAIN || errno == EWOULDBLOCK) {
                             continue;
@@ -132,9 +138,6 @@ void listenForPackets() {
                         perror("Packet read failure");
                         exit(1);
                     }
-#pragma omp task
-                    send(events[i].data.fd, buff, nbytes, 0);
-                    processPacket(buff);
                 }
             }
         }
@@ -142,7 +145,7 @@ void listenForPackets() {
 }
 
 void processPacket(const char *data) {
-    std::cout << std::string(data) << "\n";
+    std::cout << "Received: " << data << std::endl;
 }
 
 void listenTCP(int socket, unsigned long ip, unsigned short port) {
@@ -165,5 +168,11 @@ void listenTCP(int socket, unsigned long ip, unsigned short port) {
 }
 
 int createSocket(bool nonblocking) {
-    return socket(AF_INET, SOCK_STREAM | (nonblocking * SOCK_NONBLOCK), 0);
+    int sock = socket(AF_INET, SOCK_STREAM | (nonblocking * SOCK_NONBLOCK), 0);
+    int enable = 1;
+    if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0) {
+        perror("setsockopt(SO_REUSEADDR) failed");
+        exit(1);
+    }
+    return sock;
 }
