@@ -11,8 +11,7 @@
 #define MAXEVENTS 100
 
 extern char buffer[MAXPACKETSIZE];
-extern int listenSocketTCP;
-extern int sendSocketTCP;
+extern int Socket;
 extern bool isClient;
 
 extern std::unordered_map<unsigned long, std::string> clientList;

@@ -230,37 +230,3 @@ int createSocket(bool nonblocking) {
     }
     return sock;
 }
-
-void connect(const char *host) {
-    hostent *server;
-
-    if ((server = gethostbyname(host)) == nullptr) {
-        //Temporary - to signal error to user
-        perror("Bad host");
-        exit(1);
-    }
-
-    sockaddr_in addr;
-    memset(&addr, 0, sizeof(sockaddr_in));
-    addr.sin_family = AF_INET;
-    memmove(&addr.sin_addr.s_addr, server->h_addr, server->h_length);
-    addr.sin_port = htons(LISTEN_PORT_TCP);
-
-    if (connect(Socket, (sockaddr *) &addr, sizeof(addr)) < 0) {
-        //Temporary - to signal error to user
-        if (errno != EINPROGRESS && errno != EALREADY) {
-            perror("Failed to connect");
-            exit(1);
-        }
-    }
-}
-
-bool isMessagePending() {
-    //Temporary - to be replaced with ncurses integration
-    return true;
-}
-
-std::string getUserMessage() {
-    //Temporary - to be replaced with ncurses integration
-    return "abcdef\n";
-}
