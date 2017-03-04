@@ -13,12 +13,17 @@
 extern char buffer[MAXPACKETSIZE];
 extern int listenSocketTCP;
 extern int sendSocketTCP;
+extern bool isClient;
 
 extern std::unordered_map<unsigned long, std::string> clientList;
 
 void processPacket(const char *data);
 void listenForPackets();
 void listenTCP(int socket, unsigned long ip, unsigned short port);
+void connect(const char *host);
+void getMesg();
 int createSocket(bool nonblocking);
+bool isMessagePending();
+std::string getUserMessage();
 
 #endif
