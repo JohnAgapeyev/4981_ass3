@@ -32,8 +32,6 @@ class UI {
         void updateMessages();
         void addMsgChar(const char c);
         void popMsgChar();
-        void leftChar();
-        void rightChar();
         void rmMsgChar(size_t i);
         void sendMsg();
         void addMsg(const char *c);
@@ -41,6 +39,8 @@ class UI {
         void movUp();
         void movDown();
 
+        //void leftChar();
+        //void rightChar();
 
         void loop();
         //resets the ui to blank

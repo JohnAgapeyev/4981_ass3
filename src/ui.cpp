@@ -33,7 +33,8 @@ UI::UI():ouTop(0), ouBot(0), selected(0), mTop(0), mBot(0), curChar(0), state(US
     curMsg[MAXMSG] = 0;
 
     //start at the bottom of the drawable window
-    ouBot = rowsMsg;
+    ouBot = rowsUser;
+    mBot = rowsMsg;
 
     //userlist wid 40 char
     userlist = newwin(rows, 40, 0, 0);
@@ -82,12 +83,12 @@ void UI::loop(){
                 movDown();
                 updateOnlineItems();
                 break;
-            case KEY_LEFT:
-                leftChar();
-                break;
-            case KEY_RIGHT:
-                rightChar();
-                break;
+//            case KEY_LEFT:
+//                leftChar();
+//                break;
+//            case KEY_RIGHT:
+//                rightChar();
+//                break;
             case KEY_F(2):
                 state = USER;
                 break;
@@ -114,6 +115,8 @@ void UI::loop(){
     }
 }
 
+/*
+//while theses work they end up acting in replace mode so i decided to leave them out
 void UI::leftChar(){
     if(curChar > 0) {
         --curChar;
@@ -127,7 +130,7 @@ void UI::rightChar(){
         wmove(chat, rowsMsg+1, curChar < colsMsg - 1? curChar : colsMsg);
         wrefresh(chat);
     }
-}
+}*/
 
 void UI::updateMessages(){
     for(int i = mTop, j = 1; (i < mBot) && (j < rowsMsg - 1) && (i < (int)messages.size()); ++i, ++j){

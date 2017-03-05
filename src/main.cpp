@@ -43,8 +43,13 @@ int main(int argc, char *argv[]){
         ui.addUser("qwer 2");
         ui.addUser("qwer nhf 3");
     }
+    
+    for(int i = 0; i < 20; ++i){
+        ui.addMsg("This is a message");
+    }
 
     ui.updateOnlineItems();
+    ui.updateMessages();
     ui.update();
     ui.loop();
     return 0;
