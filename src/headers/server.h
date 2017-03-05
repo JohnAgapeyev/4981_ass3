@@ -12,10 +12,11 @@
 
 extern char buffer[MAXPACKETSIZE];
 extern int Socket;
-extern bool isClient;
 
 extern std::unordered_map<unsigned long, std::string> clientList;
 
+
+void server();
 void processPacket(const char *data);
 void listenForPackets();
 void listenTCP(int socket, unsigned long ip, unsigned short port);

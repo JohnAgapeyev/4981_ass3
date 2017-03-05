@@ -22,8 +22,15 @@
 #include <thread>
 
 
+#include "headers/main.h"
 #include "headers/server.h"
 #include "headers/client.h"
+
+void client(){
+        Socket = createSocket(true);
+        listenTCP(Socket, INADDR_ANY, LISTEN_PORT_TCP);
+        listenForPackets();
+}
 
 void connect(const char *host) {
     hostent *server;

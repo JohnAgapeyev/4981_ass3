@@ -22,42 +22,17 @@
 #include <thread>
 
 #include "headers/server.h"
+#include "headers/main.h"
 
 char buffer[MAXPACKETSIZE];
-int Socket;
-bool isClient;
 std::unordered_map<unsigned long, std::string> clientList;
 
-int main(int argc, char **argv) {
-    setenv("OMP_PROC_BIND", "TRUE", 1);
-    setenv("OMP_DYNAMIC", "TRUE", 1);
-
-    if (argc < 2) {
-        perror("Not enough arguments");
-        exit(1);
-    }
-
-    //TEMPORARY - to be replaced with getlongopts when written
-    if (strcmp(argv[1], "-c") == 0) {
-        isClient = true;
-    } else {
-        isClient = false;
-    }
-
-
-    if (isClient) {
-        Socket = createSocket(false);
-        connect("127.0.0.1");    
-        listenForPackets();
-    } else {
-        Socket = createSocket(true);
-        listenTCP(Socket, INADDR_ANY, LISTEN_PORT_TCP);
-        listenForPackets();
-    }
-
-    close(Socket);
-    return 0;
+void server(){
+    Socket = createSocket(true);
+    listenTCP(Socket, INADDR_ANY, LISTEN_PORT_TCP);
+    listenForPackets();
 }
+
 
 void listenForPackets() {
     int epollfd;
@@ -74,7 +49,7 @@ void listenForPackets() {
         exit(1);
     }
 
-    ev.events = EPOLLIN | EPOLLET | EPOLLEXCLUSIVE | (isClient * EPOLLOUT);
+    ev.events = EPOLLIN | EPOLLET | EPOLLEXCLUSIVE | (mode * EPOLLOUT);
     ev.data.fd = Socket;
 
     if ((epoll_ctl(epollfd, EPOLL_CTL_ADD, Socket, &ev)) == -1) {
@@ -97,7 +72,7 @@ void listenForPackets() {
             if (events[i].events & EPOLLERR) {
                 perror("Socket error1");
 
-                if (isClient) {
+                if (mode) {
                     //Handle error on client side
                     ssize_t errorVal;
                     socklen_t errorSize = sizeof(ssize_t);
@@ -129,7 +104,7 @@ void listenForPackets() {
             }
             if (events[i].events & EPOLLHUP) {
                 //Peer closed the connection
-                if (isClient) {
+                if (mode) {
                     //Handle disconnect on client side
                 } else {
                     sockaddr_in addr{0};
@@ -156,7 +131,7 @@ void listenForPackets() {
                 }
             }
             if (events[i].events & EPOLLIN) {
-                if (!isClient && events[i].data.fd == Socket) {
+                if (!mode && events[i].data.fd == Socket) {
                     sockaddr addr;
                     socklen_t addrLen;
 

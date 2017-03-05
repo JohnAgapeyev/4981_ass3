@@ -5,6 +5,8 @@
 #include <climits>
 #include <unordered_map>
 
+
+void client();
 void listenTCP(int socket, unsigned long ip, unsigned short port);
 void connect(const char *host);
 void getMesg();
