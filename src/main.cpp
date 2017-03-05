@@ -38,7 +38,7 @@ int main(int argc, char *argv[]){
     }
     //throw these in threads?
     UI ui;
-    for(int i = 0; i < 50; ++i){
+    for(int i = 0; i < 20; ++i){
         ui.addUser("1 asdf");
         ui.addUser("qwer 2");
         ui.addUser("qwer nhf 3");

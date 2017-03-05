@@ -5,13 +5,11 @@
 #include <cstring>
 #include <memory>
 #include <ncurses.h>
-#include <menu.h>
-#include <form.h>
 
 
 using namespace std;
 
-UI::UI():ouTop(0), ouBot(0), selected(0),state(USER) {
+UI::UI():ouTop(0), ouBot(0), selected(0), mTop(0), mBot(0), curChar(0), state(USER) {
     initscr();
     start_color();
     cbreak();
@@ -23,24 +21,52 @@ UI::UI():ouTop(0), ouBot(0), selected(0),state(USER) {
     init_pair(3, COLOR_BLUE, COLOR_BLACK);
 
     getmaxyx(stdscr , rows, cols);
-    ouBot = rows - 2;
+
+    //drawable size
+    rowsMsg = rows - 3;
+    rowsUser = rows - 2;
+
+    colsMsg = cols - 42;
+    colsUser = 38;
+
+    memset(curMsg, 0, MAXMSG);
+    curMsg[MAXMSG] = 0;
+
+    //start at the bottom of the drawable window
+    ouBot = rowsMsg;
 
     //userlist wid 40 char
     userlist = newwin(rows, 40, 0, 0);
     //msg wid max -40 char
     chat = newwin(rows, cols - 40, 0, 40);
 
+    //border the windows
     box(userlist, 0, 0);
     box(chat, 0, 0);
 
-    //on in from either side of max msg
-    //height of 3 leave bottom row alone
-    fields[0] = new_field(3, cols - 42, rows - 4, 42, 0, 0);
-    field_opts_off(fields[0], O_AUTOSKIP);
-    msgForm = new_form(fields);
-
     refresh();
     update();
+}
+
+UI::~UI(){
+    delwin(userlist);
+    delwin(chat);
+    endwin();
+}
+
+void UI::clear(){
+    wclear(userlist);
+    wclear(chat);
+    box(userlist, 0, 0);
+    box(chat, 0, 0);
+}
+
+void UI::update(){
+    box(userlist, 0, 0);
+    box(chat, 0, 0);
+    refresh();
+    wrefresh(userlist);
+    wrefresh(chat);
 }
 
 void UI::loop(){
@@ -56,19 +82,95 @@ void UI::loop(){
                 movDown();
                 updateOnlineItems();
                 break;
+            case KEY_LEFT:
+                leftChar();
+                break;
+            case KEY_RIGHT:
+                rightChar();
+                break;
+            case KEY_F(2):
+                state = USER;
+                break;
+            case KEY_F(3):
+                state = MSG;
+                break;
+            case KEY_BACKSPACE:
+                if(state == MSG)
+                    popMsgChar();
+                break;
+            case '\n':
+            case KEY_ENTER:
+                //send message | select DB
+                if(state == MSG)
+                    sendMsg();
+                break;
             default:
-                if(state == UI::MSG) {
-                    form_driver(msgForm, c);
+                if(state == MSG) {
+                    addMsgChar(c);
+                    updateMessages();
                 }
+                break;
         }
     }
 }
 
-UI::~UI(){
-    delwin(userlist);
-    delwin(chat);
-    endwin();
+void UI::leftChar(){
+    if(curChar > 0) {
+        --curChar;
+        wmove(chat, rowsMsg+1, curChar < colsMsg - 1 ? curChar : colsMsg);
+        wrefresh(chat);
+    }
 }
+void UI::rightChar(){
+    if(curChar <= (int)strlen(curMsg)) {
+        ++curChar;
+        wmove(chat, rowsMsg+1, curChar < colsMsg - 1? curChar : colsMsg);
+        wrefresh(chat);
+    }
+}
+
+void UI::updateMessages(){
+    for(int i = mTop, j = 1; (i < mBot) && (j < rowsMsg - 1) && (i < (int)messages.size()); ++i, ++j){
+        mvwprintw(chat, j, 1, messages.at(i).c_str());
+    }
+    mvwprintw(chat, rowsMsg + 1, 1, curMsg);
+    wrefresh(chat);
+}
+
+void UI::addMsgChar(const char c){
+    if(curChar < MAXMSG){
+        curMsg[curChar++] = c;
+        wrefresh(chat);
+    }
+}
+
+void UI::popMsgChar(){
+    if(curChar > 0){
+        mvwaddch(chat, rowsMsg+1, curChar, ' ');
+        wmove(chat, rowsMsg+1, curChar < colsMsg - 1 ? curChar : colsMsg);
+        curMsg[curChar--] = 0;
+        wrefresh(chat);
+    }
+}
+
+void UI::sendMsg(){
+    messages.push_back(curMsg);
+    memset(curMsg, ' ', MAXMSG);
+    mvwprintw(chat, rowsMsg + 1, 1, curMsg);
+    memset(curMsg, 0, MAXMSG);
+    curChar = 0;
+    wmove(chat, rowsMsg+1, 0);
+    updateMessages();
+    //send it to the server
+}
+
+void UI::addMsg(const char *c){
+    messages.push_back(c);
+}
+
+
+
+
 
 
 void UI::addUser(const char *user){
@@ -81,7 +183,7 @@ void UI::addUser(const char *user){
 }
 
 void UI::updateOnlineItems() {
-    for(int i = ouTop, j = 1; (i < ouBot) && (j < rows - 1) && (i < (int)onlineUsers.size()); ++i, ++j){
+    for(int i = ouTop, j = 1; (i < ouBot) && (j < rowsUser - 1) && (i < (int)onlineUsers.size()); ++i, ++j){
         if(i == selected)
             mvwprintw(userlist, j, 1, ("> " + onlineUsers.at(i)).c_str());
         else
@@ -110,25 +212,8 @@ void UI::movDown(){
         ++ouTop;
         ++ouBot;
         ++selected;
-    } else if (selected + 1 < ouBot) {
+    } else if (selected < ouBot && selected + 1 < (int)onlineUsers.size()) {
         ++selected;
     }
 }
 
-
-void UI::clear(){
-    wclear(userlist);
-    wclear(chat);
-    box(userlist, 0, 0);
-    box(chat, 0, 0);
-}
-
-void UI::update(){
-    box(userlist, 0, 0);
-    box(chat, 0, 0);
-    form_driver(msgForm, REQ_NEXT_FIELD);
-    form_driver(msgForm, REQ_PREV_FIELD);
-    refresh();
-    wrefresh(userlist);
-    wrefresh(chat);
-}
