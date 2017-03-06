@@ -38,10 +38,10 @@ int main(int argc, char *argv[]){
     }
     //throw these in threads?
     UI ui;
-    for(int i = 0; i < 20; ++i){
-        ui.addUser("1 asdf");
-        ui.addUser("qwer 2");
-        ui.addUser("qwer nhf 3");
+    for(int i = 0; i < 30; ++i){
+        ui.addUser("A User");
+        ui.addUser("Another User");
+        ui.addUser("Wow Users");
     }
     
     for(int i = 0; i < 20; ++i){
@@ -52,6 +52,8 @@ int main(int argc, char *argv[]){
     ui.updateMessages();
     ui.update();
     ui.loop();
+
+
     return 0;
     
     if(mode){

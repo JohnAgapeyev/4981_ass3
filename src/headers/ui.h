@@ -63,12 +63,12 @@ class UI {
         int rowsUser, colsUser;
         int rowsMsg, colsMsg;
 
-        FIELD *fields[2];
-        FORM *msgForm;
-
 
         WINDOW *userlist;
+
         WINDOW *chat;
+        WINDOW *chatMsg;
+        WINDOW *chatInput;
 };
 
 #endif

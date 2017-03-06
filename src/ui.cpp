@@ -24,7 +24,7 @@ UI::UI():ouTop(0), ouBot(0), selected(0), mTop(0), mBot(0), curChar(0), state(US
 
     //drawable size
     rowsMsg = rows - 3;
-    rowsUser = rows - 2;
+    rowsUser = rows - 1;
 
     colsMsg = cols - 42;
     colsUser = 38;
@@ -40,10 +40,13 @@ UI::UI():ouTop(0), ouBot(0), selected(0), mTop(0), mBot(0), curChar(0), state(US
     userlist = newwin(rows, 40, 0, 0);
     //msg wid max -40 char
     chat = newwin(rows, cols - 40, 0, 40);
+    chatMsg = subwin(chat, rows-3, cols - 40, 0, 40);
+    chatInput = subwin(chat, 3, cols - 40, rows-3, 40);
 
     //border the windows
     box(userlist, 0, 0);
-    box(chat, 0, 0);
+    box(chatMsg, 0, 0);
+    box(chatInput, 0, 0);
 
     refresh();
     update();
@@ -59,15 +62,19 @@ void UI::clear(){
     wclear(userlist);
     wclear(chat);
     box(userlist, 0, 0);
-    box(chat, 0, 0);
+    box(chatMsg, 0, 0);
+    box(chatInput, 0, 0);
 }
 
 void UI::update(){
     box(userlist, 0, 0);
-    box(chat, 0, 0);
+    box(chatMsg, 0, 0);
+    box(chatInput, 0, 0);
     refresh();
     wrefresh(userlist);
     wrefresh(chat);
+    wrefresh(chatMsg);
+    wrefresh(chatInput);
 }
 
 void UI::loop(){
@@ -186,7 +193,7 @@ void UI::addUser(const char *user){
 }
 
 void UI::updateOnlineItems() {
-    for(int i = ouTop, j = 1; (i < ouBot) && (j < rowsUser - 1) && (i < (int)onlineUsers.size()); ++i, ++j){
+    for(int i = ouTop, j = 1; (i+1 < ouBot) && (j < rowsUser) && (i < (int)onlineUsers.size()); ++i, ++j){
         if(i == selected)
             mvwprintw(userlist, j, 1, ("> " + onlineUsers.at(i)).c_str());
         else
@@ -198,25 +205,28 @@ void UI::updateOnlineItems() {
 void UI::movUp(){
     if(state != USER)
         return;
-    if(selected == ouTop && ouTop > 0){
-        --ouTop;
-        --ouBot;
+    if (selected > 0)
         --selected;
-    } else if (selected > ouTop) {
-        --selected;
+    if(selected-1 <= ouTop && ouTop > 0){
+        int diff = ouBot - ouTop -1;
+        ouTop -= diff;
+        ouBot -= diff;
+        wclear(userlist);
+        box(userlist,0,0);
     }
 }
 
 void UI::movDown(){
     if(state != USER)
         return;
-    //without +1 it will scoll one line too late
-    if(selected + 1 == ouBot && ouBot < (int)onlineUsers.size()){
-        ++ouTop;
-        ++ouBot;
+    if (selected < (int)onlineUsers.size())
         ++selected;
-    } else if (selected < ouBot && selected + 1 < (int)onlineUsers.size()) {
-        ++selected;
+    if(selected+1 >= ouBot){
+        int diff = ouBot - ouTop - 1;
+        ouTop += diff;
+        ouBot += diff;
+        wclear(userlist);
+        box(userlist,0,0);
     }
 }
 
