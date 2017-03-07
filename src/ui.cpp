@@ -1,15 +1,18 @@
 #include "headers/ui.h"
+#include "headers/client.h"
+#include "headers/main.h"
 
 #include <vector>
 #include <string>
 #include <cstring>
 #include <memory>
 #include <ncurses.h>
+#include <sys/socket.h>
 
 
 using namespace std;
 
-UI::UI():ouTop(0), ouBot(0), selected(0), curChar(0), state(MSG) {
+UI::UI():ouTop(0), ouBot(0), selected(0), curChar(0), running(true), state(MSG) {
     initscr();
     start_color();
     cbreak();
@@ -100,8 +103,18 @@ void UI::update(){
 void UI::loop(){
     int c;
     update();
-    while((c = getch()) != KEY_F(1)){
+    while(running) {
+        //every second unblock and see if the connection was terminated
+        timeout(1000);
+        c = getch();
         switch(c){
+            case ERR:
+                //no input which is fine
+                //just check again
+                break;
+            case KEY_F(1):
+                running = false;
+                break;
             case KEY_F(2):
                 state = USER;
                 drawMenu();
@@ -128,7 +141,7 @@ void UI::loop(){
                 break;
             case '\n':
             case KEY_ENTER:
-                //send message | select DB
+                //send message | select DM
                 if(state == MSG)
                     sendMsg();
                 break;
@@ -174,7 +187,11 @@ void UI::sendMsg(){
     if(!curChar)
         return;
     addMsg(curMsg);
-    //send it to the server
+
+    if (send(Socket, curMsg, curChar, 0) < 0) {
+        perror("Send failure");
+    }
+    //setMessagePending(curMsg);
     wclear(chatInput);
     box(chatInput, 0, 0);
     memset(curMsg, 0, MAXMSG);

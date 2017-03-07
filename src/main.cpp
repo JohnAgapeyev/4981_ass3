@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <unistd.h>
+#include <thread>
 
 #include "headers/main.h"
 #include "headers/server.h"
@@ -13,13 +14,14 @@
 int Socket = 0;
 int port = 54123;
 int mode = 1;
+UI *ui = nullptr;
 
 int main(int argc, char *argv[]){
     int opt;
-    
+
     setenv("OMP_PROC_BIND", "TRUE", 1);
     setenv("OMP_DYNAMIC", "TRUE", 1);
-    
+
     while((opt = getopt(argc, argv, "csp:")) != -1){
         switch(opt){
             case 's'://server
@@ -36,28 +38,37 @@ int main(int argc, char *argv[]){
                 break;
         }
     }
-    //throw these in threads?
-    UI ui;
-    for(int i = 0; i < 30; ++i){
-        ui.addUser("A User");
-        ui.addUser("Another User");
-        ui.addUser("Wow Users");
-    }
-    
-    for(int i = 0; i < 20; ++i){
-        ui.addMsg("This is a message");
-    }
 
-    ui.updateOnlineItems();
-    ui.updateMessages();
-    ui.update();
-    ui.loop();
-
-
-    return 0;
-    
     if(mode){
+        ui = new UI;
+        //dummy data
+        /*
+        for(int i = 0; i < 30; ++i){
+            ui->addUser("A User");
+            ui->addUser("Another User");
+            ui->addUser("Wow Users");
+        }
+
+        for(int i = 0; i < 20; ++i){
+            ui->addMsg("This is a message");
+        }
+        */
+        ui->updateOnlineItems();
+        ui->updateMessages();
+        
+
+        std::thread uiWorker([&]{
+                ui->loop();
+                delete ui;
+                ui = 0;
+                });
+
         client();
+        //ensure it closed
+        if(ui != nullptr)
+            ui->close();
+        //wait for that to actually happen
+        uiWorker.join();
     } else {
         server();
     }

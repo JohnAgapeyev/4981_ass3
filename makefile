@@ -1,7 +1,7 @@
 BASEFLAGS := -Wall -pedantic -pipe -std=c++14 -fopenmp
 DEBUGFLAGS := -g -pg
 RELEASEFLAGS := -O3 -march=native -flto -DNDEBUG
-CLIBS := -pthread -lncurses -lmenu -lform
+CLIBS := -pthread -lncurses
 CXXFLAGS := $(BASEFLAGS)
 APPNAME := 4981_ass3
 ODIR := bin

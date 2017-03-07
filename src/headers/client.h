@@ -9,9 +9,8 @@
 void client();
 void listenTCP(int socket, unsigned long ip, unsigned short port);
 void connect(const char *host);
+void setMessagePending(const char* msg);
 void getMesg();
 int createSocket(bool nonblocking);
-bool isMessagePending();
-std::string getUserMessage();
 
 #endif

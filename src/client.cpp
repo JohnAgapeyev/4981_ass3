@@ -20,6 +20,7 @@
 #include <string>
 #include <iostream>
 #include <thread>
+#include <atomic>
 
 
 #include "headers/main.h"
@@ -27,9 +28,9 @@
 #include "headers/client.h"
 
 void client(){
-        Socket = createSocket(true);
-        listenTCP(Socket, INADDR_ANY, LISTEN_PORT_TCP);
-        listenForPackets();
+    Socket = createSocket(true);
+    connect("127.0.0.1");
+    listenForPackets();
 }
 
 void connect(const char *host) {
@@ -54,14 +55,4 @@ void connect(const char *host) {
             exit(1);
         }
     }
-}
-
-bool isMessagePending() {
-    //Temporary - to be replaced with ncurses integration
-    return true;
-}
-
-std::string getUserMessage() {
-    //Temporary - to be replaced with ncurses integration
-    return "abcdef\n";
 }

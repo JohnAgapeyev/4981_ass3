@@ -8,6 +8,7 @@
 #include <deque>
 #include <string>
 #include <memory>
+#include <atomic>
 
 #define MAXMSG 128
 
@@ -43,6 +44,12 @@ class UI {
         void drawMenu();
 
         void loop();
+
+        //tell the ui its time to stop
+        void close() {
+            running = false;
+        }
+
         //resets the ui to blank
         //this will cause flashes so dont use it all the time
         void clear();
@@ -55,6 +62,8 @@ class UI {
         std::deque<std::string> messages;
         char curMsg[MAXMSG+1];
         int curChar;
+
+        std::atomic<bool> running;
 
         Selection state;
 

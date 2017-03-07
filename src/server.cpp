@@ -16,16 +16,17 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <cstdarg>
-#include <unordered_map>
+#include <unordered_set>
 #include <string>
 #include <iostream>
 #include <thread>
+#include <algorithm>
 
 #include "headers/server.h"
 #include "headers/main.h"
 
 char buffer[MAXPACKETSIZE];
-std::unordered_map<unsigned long, std::string> clientList;
+std::unordered_set<int> socketList;
 
 void server(){
     Socket = createSocket(true);
@@ -49,7 +50,7 @@ void listenForPackets() {
         exit(1);
     }
 
-    ev.events = EPOLLIN | EPOLLET | EPOLLEXCLUSIVE | (mode * EPOLLOUT);
+    ev.events = EPOLLIN | EPOLLET | EPOLLEXCLUSIVE;
     ev.data.fd = Socket;
 
     if ((epoll_ctl(epollfd, EPOLL_CTL_ADD, Socket, &ev)) == -1) {
@@ -61,7 +62,7 @@ void listenForPackets() {
     ssize_t nbytes = 0;
     int nevents = 0;
 
-    for (;;) {
+    for (bool running = true;running;) {
         if ((nevents = epoll_wait(epollfd, events, MAXEVENTS, -1)) == -1) {
             perror("epoll_wait");
             exit(1);
@@ -80,24 +81,18 @@ void listenForPackets() {
                     if (getsockopt(events[i].data.fd, SOL_SOCKET, SO_ERROR, &errorVal, &errorSize) < 0) {
                         perror("GetSockOpt");
                         close(events[i].data.fd);
+                        running = false;
                         continue;
                     }
                     if (errorVal != 0) {
                         //Connect failed
                         perror("Connection failure");
                         close(events[i].data.fd);
+                        running = false;
                         continue;
                     }
                 } else {
-                    sockaddr_in addr{0};
-                    socklen_t addrLen = 0;
-
-                    if (getpeername(events[i].data.fd, (sockaddr *) &addr, &addrLen) == -1) {
-                        perror("Get Peer Name");
-                        exit(1);
-                    }
-
-                    clientList.erase(addr.sin_addr.s_addr);
+                    socketList.erase(events[i].data.fd);
                 }
                 close(events[i].data.fd);
                 continue;
@@ -106,29 +101,12 @@ void listenForPackets() {
                 //Peer closed the connection
                 if (mode) {
                     //Handle disconnect on client side
+                    running = false;
                 } else {
-                    sockaddr_in addr{0};
-                    socklen_t addrLen = 0;
-
-                    if (getpeername(events[i].data.fd, (sockaddr *) &addr, &addrLen) == -1) {
-                        perror("Get Peer Name");
-                        exit(1);
-                    }
-
-                    clientList.erase(addr.sin_addr.s_addr);
+                    socketList.erase(events[i].data.fd);
                 }
                 close(events[i].data.fd);
                 continue;
-            }
-            if (events[i].events & EPOLLOUT) {
-                if (isMessagePending()) {
-                    const auto& out = getUserMessage();
-                    if (send(events[i].data.fd, out.c_str(), out.size(), 0) < 0) {
-                        perror("Send failure");
-                        close(events[i].data.fd);
-                        continue;
-                    }
-                }
             }
             if (events[i].events & EPOLLIN) {
                 if (!mode && events[i].data.fd == Socket) {
@@ -141,18 +119,23 @@ void listenForPackets() {
                         perror("epoll_ctl");
                         exit(1);
                     }
-                    unsigned long ip;
-
-                    inet_pton(AF_INET, addr.sa_data, &ip);
 
                     //Save address of new client
-                    clientList.insert({ip, addr.sa_data});
+                    socketList.insert(ev.data.fd);
                 } else {
-                    while ((nbytes = recv(events[i].data.fd, buff, MAXPACKETSIZE, 0)) > 0) {
+                    //changed from while to if, on tcp it will block till it returns > 0
+                    if ((nbytes = recv(events[i].data.fd, buff, MAXPACKETSIZE, 0)) > 0) {
 #pragma omp task
                         {
-                            send(events[i].data.fd, buff, nbytes, 0);
-                            processPacket(buff);
+                            if(mode){
+                                buff[nbytes] = '\0';
+                                ui->addMsg(buff);
+                            } else {
+                                for(const auto fd : socketList) {
+                                    if(fd != events[i].data.fd)
+                                        send(fd, buff, nbytes, 0);
+                                }
+                            }
                         }
                     }
                     if (nbytes == -1) {
@@ -167,10 +150,6 @@ void listenForPackets() {
         }
     }
     free(events);
-}
-
-void processPacket(const char *data) {
-    std::cout << "Received: " << data << std::endl;
 }
 
 void listenTCP(int Socket, unsigned long ip, unsigned short port) {
