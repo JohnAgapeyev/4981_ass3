@@ -5,6 +5,7 @@
 #include <menu.h>
 #include <form.h>
 #include <vector>
+#include <deque>
 #include <string>
 #include <memory>
 
@@ -39,8 +40,7 @@ class UI {
         void movUp();
         void movDown();
 
-        //void leftChar();
-        //void rightChar();
+        void drawMenu();
 
         void loop();
         //resets the ui to blank
@@ -52,8 +52,7 @@ class UI {
         std::vector<std::string> onlineUsers;
         int ouTop, ouBot;
         int selected;
-        std::vector<std::string> messages;
-        int mTop, mBot;
+        std::deque<std::string> messages;
         char curMsg[MAXMSG+1];
         int curChar;
 
@@ -66,7 +65,6 @@ class UI {
 
         WINDOW *userlist;
 
-        WINDOW *chat;
         WINDOW *chatMsg;
         WINDOW *chatInput;
 };

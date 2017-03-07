@@ -9,7 +9,7 @@
 
 using namespace std;
 
-UI::UI():ouTop(0), ouBot(0), selected(0), mTop(0), mBot(0), curChar(0), state(USER) {
+UI::UI():ouTop(0), ouBot(0), selected(0), curChar(0), state(MSG) {
     initscr();
     start_color();
     cbreak();
@@ -23,30 +23,30 @@ UI::UI():ouTop(0), ouBot(0), selected(0), mTop(0), mBot(0), curChar(0), state(US
     getmaxyx(stdscr , rows, cols);
 
     //drawable size
-    rowsMsg = rows - 3;
+    rowsMsg = rows - 4;
     rowsUser = rows - 1;
 
     colsMsg = cols - 42;
-    colsUser = 38;
+    colsUser = 40;
 
     memset(curMsg, 0, MAXMSG);
     curMsg[MAXMSG] = 0;
 
     //start at the bottom of the drawable window
     ouBot = rowsUser;
-    mBot = rowsMsg;
 
     //userlist wid 40 char
-    userlist = newwin(rows, 40, 0, 0);
+    userlist = newwin(rows, colsUser, 0, 0);
     //msg wid max -40 char
-    chat = newwin(rows, cols - 40, 0, 40);
-    chatMsg = subwin(chat, rows-3, cols - 40, 0, 40);
-    chatInput = subwin(chat, 3, cols - 40, rows-3, 40);
+    chatMsg = newwin(rowsMsg, colsMsg, 1, 40);
+    chatInput = newwin(3, colsMsg, rows-3, 40);
 
     //border the windows
     box(userlist, 0, 0);
     box(chatMsg, 0, 0);
     box(chatInput, 0, 0);
+
+    drawMenu();
 
     refresh();
     update();
@@ -54,25 +54,45 @@ UI::UI():ouTop(0), ouBot(0), selected(0), mTop(0), mBot(0), curChar(0), state(US
 
 UI::~UI(){
     delwin(userlist);
-    delwin(chat);
+    delwin(chatMsg);
+    delwin(chatInput);
     endwin();
+}
+
+void UI::drawMenu(){
+    attron(COLOR_PAIR(1));
+    mvwprintw(stdscr, 0, 42, "[Exit: F1]");
+    attroff(COLOR_PAIR(1));
+    
+    if(state == USER)
+        attron(A_STANDOUT);
+    attron(COLOR_PAIR(2));
+    wprintw(stdscr,"[User Selection: F2]");
+    attroff(COLOR_PAIR(2));
+    if(state == USER)
+        attroff(A_STANDOUT);
+    
+    if(state == MSG)
+        attron(A_STANDOUT);
+    attron(COLOR_PAIR(3));
+    wprintw(stdscr,"[Chat Window: F3]");
+    attroff(COLOR_PAIR(3));
+    if(state == MSG)
+        attroff(A_STANDOUT);
 }
 
 void UI::clear(){
     wclear(userlist);
-    wclear(chat);
+    wclear(chatMsg);
+    wclear(chatInput);
     box(userlist, 0, 0);
     box(chatMsg, 0, 0);
     box(chatInput, 0, 0);
 }
 
 void UI::update(){
-    box(userlist, 0, 0);
-    box(chatMsg, 0, 0);
-    box(chatInput, 0, 0);
     refresh();
     wrefresh(userlist);
-    wrefresh(chat);
     wrefresh(chatMsg);
     wrefresh(chatInput);
 }
@@ -82,26 +102,26 @@ void UI::loop(){
     update();
     while((c = getch()) != KEY_F(1)){
         switch(c){
-            case KEY_UP:
-                movUp();
-                updateOnlineItems();
-                break;
-            case KEY_DOWN:
-                movDown();
-                updateOnlineItems();
-                break;
-//            case KEY_LEFT:
-//                leftChar();
-//                break;
-//            case KEY_RIGHT:
-//                rightChar();
-//                break;
             case KEY_F(2):
                 state = USER;
+                drawMenu();
                 break;
             case KEY_F(3):
                 state = MSG;
+                drawMenu();
                 break;
+
+            case KEY_UP:
+                movUp();
+                break;
+            case KEY_DOWN:
+                movDown();
+                break;
+            case KEY_LEFT:
+                break;
+            case KEY_RIGHT:
+                break;
+
             case KEY_BACKSPACE:
                 if(state == MSG)
                     popMsgChar();
@@ -115,71 +135,60 @@ void UI::loop(){
             default:
                 if(state == MSG) {
                     addMsgChar(c);
-                    updateMessages();
                 }
                 break;
         }
     }
 }
 
-/*
-//while theses work they end up acting in replace mode so i decided to leave them out
-void UI::leftChar(){
-    if(curChar > 0) {
-        --curChar;
-        wmove(chat, rowsMsg+1, curChar < colsMsg - 1 ? curChar : colsMsg);
-        wrefresh(chat);
-    }
-}
-void UI::rightChar(){
-    if(curChar <= (int)strlen(curMsg)) {
-        ++curChar;
-        wmove(chat, rowsMsg+1, curChar < colsMsg - 1? curChar : colsMsg);
-        wrefresh(chat);
-    }
-}*/
-
 void UI::updateMessages(){
-    for(int i = mTop, j = 1; (i < mBot) && (j < rowsMsg - 1) && (i < (int)messages.size()); ++i, ++j){
-        mvwprintw(chat, j, 1, messages.at(i).c_str());
+    int j = rowsMsg - 2;
+    wclear(chatMsg);
+    box(chatMsg, 0, 0);
+    for(const auto& m : messages){
+        if(j == 2)
+            break;
+        mvwprintw(chatMsg, j--, 1, m.c_str());
     }
-    mvwprintw(chat, rowsMsg + 1, 1, curMsg);
-    wrefresh(chat);
+    wrefresh(chatMsg);
 }
 
 void UI::addMsgChar(const char c){
     if(curChar < MAXMSG){
         curMsg[curChar++] = c;
-        wrefresh(chat);
+        mvwprintw(chatInput, 1, 1, curMsg);
+        wrefresh(chatInput);
     }
 }
 
 void UI::popMsgChar(){
     if(curChar > 0){
-        mvwaddch(chat, rowsMsg+1, curChar, ' ');
-        wmove(chat, rowsMsg+1, curChar < colsMsg - 1 ? curChar : colsMsg);
+        mvwaddch(chatInput, 1, curChar, ' ');
+        wmove(chatInput, 1, curChar < colsMsg - 1 ? curChar : colsMsg);
         curMsg[curChar--] = 0;
-        wrefresh(chat);
+        wrefresh(chatInput);
     }
 }
 
 void UI::sendMsg(){
-    messages.push_back(curMsg);
-    memset(curMsg, ' ', MAXMSG);
-    mvwprintw(chat, rowsMsg + 1, 1, curMsg);
+    if(!curChar)
+        return;
+    addMsg(curMsg);
+    //send it to the server
+    wclear(chatInput);
+    box(chatInput, 0, 0);
     memset(curMsg, 0, MAXMSG);
     curChar = 0;
-    wmove(chat, rowsMsg+1, 0);
     updateMessages();
-    //send it to the server
+
+    wmove(chatInput, rowsMsg + 1, 0);
+    wrefresh(chatInput);
 }
 
 void UI::addMsg(const char *c){
-    messages.push_back(c);
+    messages.push_front(c);
+    updateMessages();
 }
-
-
-
 
 
 
@@ -190,14 +199,18 @@ void UI::addUser(const char *user){
         onlineUsers.push_back(user + string(pad, ' '));
     else 
         onlineUsers.push_back(user);
+    updateOnlineItems();
 }
 
 void UI::updateOnlineItems() {
     for(int i = ouTop, j = 1; (i+1 < ouBot) && (j < rowsUser) && (i < (int)onlineUsers.size()); ++i, ++j){
-        if(i == selected)
+        if(i == selected) {
+            attron(A_STANDOUT);
             mvwprintw(userlist, j, 1, ("> " + onlineUsers.at(i)).c_str());
-        else
+            attroff(A_STANDOUT);
+        } else {
             mvwprintw(userlist, j, 1, ("  " + onlineUsers.at(i)).c_str());
+        }
     }
     wrefresh(userlist);
 }
@@ -214,6 +227,7 @@ void UI::movUp(){
         wclear(userlist);
         box(userlist,0,0);
     }
+    updateOnlineItems();
 }
 
 void UI::movDown(){
@@ -228,5 +242,6 @@ void UI::movDown(){
         wclear(userlist);
         box(userlist,0,0);
     }
+    updateOnlineItems();
 }
 
