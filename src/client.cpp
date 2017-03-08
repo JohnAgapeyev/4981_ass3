@@ -27,9 +27,9 @@
 #include "headers/server.h"
 #include "headers/client.h"
 
-void client(){
+void client(const char *host){
     Socket = createSocket(true);
-    connect("127.0.0.1");
+    connect(host);
     listenForPackets();
 }
 

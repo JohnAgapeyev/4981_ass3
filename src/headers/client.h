@@ -6,11 +6,9 @@
 #include <unordered_map>
 
 
-void client();
 void listenTCP(int socket, unsigned long ip, unsigned short port);
 void connect(const char *host);
-void setMessagePending(const char* msg);
-void getMesg();
+void client(const char *host);
 int createSocket(bool nonblocking);
 
 #endif

@@ -123,13 +123,13 @@ void listenForPackets() {
                     //Save address of new client
                     socketList.insert(ev.data.fd);
                 } else {
-                    //changed from while to if, on tcp it will block till it returns > 0
-                    if ((nbytes = recv(events[i].data.fd, buff, MAXPACKETSIZE, 0)) > 0) {
+                    while ((nbytes = recv(events[i].data.fd, buff, MAXPACKETSIZE, 0)) > 0) {
 #pragma omp task
                         {
                             if(mode){
                                 buff[nbytes] = '\0';
-                                ui->addMsg(buff);
+                                if(ui != nullptr)
+                                    ui->addMsg(buff);
                             } else {
                                 for(const auto fd : socketList) {
                                     if(fd != events[i].data.fd)

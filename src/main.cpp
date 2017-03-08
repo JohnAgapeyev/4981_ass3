@@ -14,6 +14,7 @@
 int Socket = 0;
 int port = 54123;
 int mode = 1;
+
 UI *ui = nullptr;
 
 int main(int argc, char *argv[]){
@@ -40,7 +41,8 @@ int main(int argc, char *argv[]){
     }
 
     if(mode){
-        ui = new UI;
+        UI uim;
+        ui = &uim;
         //dummy data
         /*
         for(int i = 0; i < 30; ++i){
@@ -53,20 +55,19 @@ int main(int argc, char *argv[]){
             ui->addMsg("This is a message");
         }
         */
-        ui->updateOnlineItems();
-        ui->updateMessages();
+        uim.updateOnlineItems();
+        uim.updateMessages();
         
-
+        std::string host = uim.loopGetHost();
+        if(!host.size())
+            return 1;
         std::thread uiWorker([&]{
-                ui->loop();
-                delete ui;
-                ui = 0;
+                uim.loop();
                 });
 
-        client();
+        client(host.c_str());
         //ensure it closed
-        if(ui != nullptr)
-            ui->close();
+        uim.close();
         //wait for that to actually happen
         uiWorker.join();
     } else {

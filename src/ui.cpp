@@ -70,7 +70,7 @@ void UI::drawMenu(){
     if(state == USER)
         attron(A_STANDOUT);
     attron(COLOR_PAIR(2));
-    wprintw(stdscr,"[User Selection: F2]");
+    wprintw(stdscr, "[User Selection: F2]");
     attroff(COLOR_PAIR(2));
     if(state == USER)
         attroff(A_STANDOUT);
@@ -78,7 +78,7 @@ void UI::drawMenu(){
     if(state == MSG)
         attron(A_STANDOUT);
     attron(COLOR_PAIR(3));
-    wprintw(stdscr,"[Chat Window: F3]");
+    wprintw(stdscr, "[Chat Window: F3]");
     attroff(COLOR_PAIR(3));
     if(state == MSG)
         attroff(A_STANDOUT);
@@ -94,24 +94,75 @@ void UI::clear(){
 }
 
 void UI::update(){
+    wmove(chatInput, 1, 1 + curChar);
     refresh();
     wrefresh(userlist);
     wrefresh(chatMsg);
     wrefresh(chatInput);
 }
 
+std::string UI::loopGetHost(){
+    int c;
+    bool run = true;
+    char host[HOSTLEN];
+    memset(host, 0, HOSTLEN);
+
+    int cur = 0;
+
+    WINDOW *temp = newwin(4, HOSTLEN + 2, rows / 2, cols / 2 - HOSTLEN / 2);
+    box(temp,0,0);
+
+    const char *msg = "Enter Hostname Of Server:";
+    mvwprintw(temp, 1, strlen(msg)/2, msg);
+    attron(A_STANDOUT);
+    while(run) {
+        mvwprintw(temp, 2, 1, host);
+        mvwaddch(temp, 2, 1 + cur, ' ');
+        wmove(temp,2,1 + cur);
+        wrefresh(temp);
+        switch(c = getch()){
+            case KEY_F(1):
+                run = false;
+                break;
+            case KEY_UP:
+            case KEY_DOWN:
+            case KEY_LEFT:
+            case KEY_RIGHT:
+                break;
+            case KEY_BACKSPACE:
+                if(cur > 0)
+                    host[cur--] = 0;
+                break;
+            case '\n':
+            case KEY_ENTER:
+                run = false;
+                break;
+            default:
+                if(cur < HOSTLEN)
+                    host[cur++] = c;
+                break;
+        }
+    }
+    attroff(A_STANDOUT);
+    delwin(temp);
+    return host;
+}
+
 void UI::loop(){
     int c;
+    clear();
     update();
     while(running) {
         //every second unblock and see if the connection was terminated
         timeout(1000);
-        c = getch();
-        switch(c){
+        switch(c = getch()){
+            //ignore the following strokes
+            case KEY_LEFT:
+            case KEY_RIGHT:
             case ERR:
-                //no input which is fine
-                //just check again
+                //just checking if we are still running
                 break;
+
             case KEY_F(1):
                 running = false;
                 break;
@@ -123,16 +174,11 @@ void UI::loop(){
                 state = MSG;
                 drawMenu();
                 break;
-
             case KEY_UP:
                 movUp();
                 break;
             case KEY_DOWN:
                 movDown();
-                break;
-            case KEY_LEFT:
-                break;
-            case KEY_RIGHT:
                 break;
 
             case KEY_BACKSPACE:
@@ -163,7 +209,9 @@ void UI::updateMessages(){
             break;
         mvwprintw(chatMsg, j--, 1, m.c_str());
     }
+    wmove(chatInput, 1, 1 + curChar);
     wrefresh(chatMsg);
+    wrefresh(chatInput);
 }
 
 void UI::addMsgChar(const char c){
@@ -175,12 +223,11 @@ void UI::addMsgChar(const char c){
 }
 
 void UI::popMsgChar(){
-    if(curChar > 0){
-        mvwaddch(chatInput, 1, curChar, ' ');
-        wmove(chatInput, 1, curChar < colsMsg - 1 ? curChar : colsMsg);
+    if(curChar > 0)
         curMsg[curChar--] = 0;
-        wrefresh(chatInput);
-    }
+    mvwaddch(chatInput, 1, 1 + curChar, ' ');
+    wmove(chatInput, 1, curChar);
+    wrefresh(chatInput);
 }
 
 void UI::sendMsg(){

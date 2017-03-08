@@ -9,8 +9,10 @@
 #include <string>
 #include <memory>
 #include <atomic>
+#include <string>
 
 #define MAXMSG 128
+#define HOSTLEN 80
 
 class UI {
     public:
@@ -44,6 +46,7 @@ class UI {
         void drawMenu();
 
         void loop();
+        std::string loopGetHost();
 
         //tell the ui its time to stop
         void close() {
