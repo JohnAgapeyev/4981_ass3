@@ -66,9 +66,6 @@ int main(int argc, char *argv[]){
                 });
 
         client(host.c_str());
-        //ensure it closed
-        uim.close();
-        //wait for that to actually happen
         uiWorker.join();
     } else {
         server();

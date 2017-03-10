@@ -12,7 +12,7 @@
 
 using namespace std;
 
-UI::UI():ouTop(0), ouBot(0), selected(0), curChar(0), running(true), state(MSG) {
+UI::UI():ouTop(0), ouBot(0), selected(0), curChar(0), state(MSG) {
     initscr();
     start_color();
     cbreak();
@@ -32,8 +32,7 @@ UI::UI():ouTop(0), ouBot(0), selected(0), curChar(0), running(true), state(MSG) 
     colsMsg = cols - 42;
     colsUser = 40;
 
-    memset(curMsg, 0, MAXMSG);
-    curMsg[MAXMSG] = 0;
+    curMsg[MAXMSG] = '\0';
 
     //start at the bottom of the drawable window
     ouBot = rowsUser;
@@ -44,13 +43,8 @@ UI::UI():ouTop(0), ouBot(0), selected(0), curChar(0), running(true), state(MSG) 
     chatMsg = newwin(rowsMsg, colsMsg, 1, 40);
     chatInput = newwin(3, colsMsg, rows-3, 40);
 
-    //border the windows
-    box(userlist, 0, 0);
-    box(chatMsg, 0, 0);
-    box(chatInput, 0, 0);
-
+    clear();
     drawMenu();
-
     refresh();
     update();
 }
@@ -85,6 +79,8 @@ void UI::drawMenu(){
 }
 
 void UI::clear(){
+    memset(curMsg, 0, MAXMSG);
+    curChar = 0;
     wclear(userlist);
     wclear(chatMsg);
     wclear(chatInput);
@@ -122,7 +118,7 @@ std::string UI::loopGetHost(){
         wrefresh(temp);
         switch(c = getch()){
             case KEY_F(1):
-                run = false;
+                exit(1);
                 break;
             case KEY_UP:
             case KEY_DOWN:
@@ -152,19 +148,14 @@ void UI::loop(){
     int c;
     clear();
     update();
-    while(running) {
-        //every second unblock and see if the connection was terminated
-        timeout(1000);
+    for(;;) {
         switch(c = getch()){
-            //ignore the following strokes
             case KEY_LEFT:
             case KEY_RIGHT:
-            case ERR:
-                //just checking if we are still running
                 break;
 
             case KEY_F(1):
-                running = false;
+                exit(1);
                 break;
             case KEY_F(2):
                 state = USER;
@@ -226,7 +217,7 @@ void UI::popMsgChar(){
     if(curChar > 0)
         curMsg[curChar--] = 0;
     mvwaddch(chatInput, 1, 1 + curChar, ' ');
-    wmove(chatInput, 1, curChar);
+    wmove(chatInput, 1,1 + curChar);
     wrefresh(chatInput);
 }
 
@@ -250,11 +241,11 @@ void UI::sendMsg(){
 }
 
 void UI::addMsg(const char *c){
-    messages.push_front(c);
-    updateMessages();
+    if(strlen(c)){
+        messages.push_front(c);
+        updateMessages();
+    }
 }
-
-
 
 void UI::addUser(const char *user){
     //40 - 2 from selection char

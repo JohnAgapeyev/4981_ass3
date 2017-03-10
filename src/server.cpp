@@ -30,6 +30,8 @@ std::unordered_set<int> socketList;
 
 void server(){
     Socket = createSocket(true);
+    memset(buffer, 0, MAXPACKETSIZE);
+
     listenTCP(Socket, INADDR_ANY, LISTEN_PORT_TCP);
     listenForPackets();
 }
@@ -62,7 +64,7 @@ void listenForPackets() {
     ssize_t nbytes = 0;
     int nevents = 0;
 
-    for (bool running = true;running;) {
+    for (;;) {
         if ((nevents = epoll_wait(epollfd, events, MAXEVENTS, -1)) == -1) {
             perror("epoll_wait");
             exit(1);
@@ -81,14 +83,12 @@ void listenForPackets() {
                     if (getsockopt(events[i].data.fd, SOL_SOCKET, SO_ERROR, &errorVal, &errorSize) < 0) {
                         perror("GetSockOpt");
                         close(events[i].data.fd);
-                        running = false;
                         continue;
                     }
                     if (errorVal != 0) {
                         //Connect failed
                         perror("Connection failure");
                         close(events[i].data.fd);
-                        running = false;
                         continue;
                     }
                 } else {
@@ -101,7 +101,7 @@ void listenForPackets() {
                 //Peer closed the connection
                 if (mode) {
                     //Handle disconnect on client side
-                    running = false;
+                    exit(1);
                 } else {
                     socketList.erase(events[i].data.fd);
                 }
@@ -115,25 +115,27 @@ void listenForPackets() {
 
                     ev.data.fd = accept(Socket, &addr, &addrLen);
 
+                    makeNonBlock(ev.data.fd);
+
                     if ((epoll_ctl(epollfd, EPOLL_CTL_ADD, ev.data.fd, &ev)) == -1) {
                         perror("epoll_ctl");
                         exit(1);
                     }
-
                     //Save address of new client
                     socketList.insert(ev.data.fd);
                 } else {
                     while ((nbytes = recv(events[i].data.fd, buff, MAXPACKETSIZE, 0)) > 0) {
 #pragma omp task
                         {
-                            if(mode){
-                                buff[nbytes] = '\0';
-                                if(ui != nullptr)
-                                    ui->addMsg(buff);
+                            buff[nbytes] = '\0';
+                            if(mode && ui){
+                                ui->addMsg(buff);
                             } else {
+                                printf("read %d from %lu: %s\n",nbytes, events[i].data.fd, buff);
                                 for(const auto fd : socketList) {
-                                    if(fd != events[i].data.fd)
+                                    if(fd != events[i].data.fd){
                                         send(fd, buff, nbytes, 0);
+                                    }
                                 }
                             }
                         }
@@ -183,4 +185,12 @@ int createSocket(bool nonblocking) {
         exit(1);
     }
     return sock;
+}
+
+
+void makeNonBlock(int socket){
+    if(fcntl(socket, F_SETFL, O_NONBLOCK) == -1){
+        perror("fctl nonblock");
+        exit(1);
+    }
 }

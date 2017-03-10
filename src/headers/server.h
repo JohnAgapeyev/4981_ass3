@@ -20,9 +20,6 @@ void server();
 void listenForPackets();
 void listenTCP(int socket, unsigned long ip, unsigned short port);
 void connect(const char *host);
-void getMesg();
 int createSocket(bool nonblocking);
-bool isMessagePending();
-std::string getUserMessage();
-
+void makeNonBlock(int socket);
 #endif
