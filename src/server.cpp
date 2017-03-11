@@ -135,7 +135,8 @@ void listenForPackets() {
                                 if(buffer[0] == 'u'){
                                     ui->addUser(buffer+1);
                                 } else if(buffer[0] == 'm'){
-                                    ui->addMsg(buffer+1);
+                                    int32_t id = *reinterpret_cast<int32_t*>(buffer+1);
+                                    ui->addMsg(buffer+5);
                                 }
                             } else {
                                 printf("read %d from %d: %s\n", static_cast<int>(nbytes),

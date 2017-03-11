@@ -1,6 +1,7 @@
 #include "headers/ui.h"
 #include "headers/client.h"
 #include "headers/main.h"
+#include "headers/packet.h"
 
 #include <vector>
 #include <string>
@@ -273,10 +274,10 @@ void UI::sendMsg(){
     if(!curChar)
         return;
     addMsg(curMsg);
-    char buff[MAXMSG+1];
-    buff[0] = 'm';
-    strcpy(buff+1,curMsg);
-    if (send(Socket, buff, curChar+1, 0) < 0) {
+    int buffSize = MAXMSG;
+    char buff[MAXMSG];
+    genMsgPacket(buff, &buffSize, curMsg);
+    if (send(Socket, buff, buffSize, 0) < 0) {
         perror("Send failure");
     }
     //setMessagePending(curMsg);

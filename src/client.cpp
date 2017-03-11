@@ -26,6 +26,7 @@
 #include "headers/main.h"
 #include "headers/server.h"
 #include "headers/client.h"
+#include "headers/packet.h"
 
 void client(const char *host){
     Socket = createSocket(true);
@@ -56,10 +57,10 @@ void connect(const char *host) {
         }
     }
     const auto& name = ui->getName();
+    int buffSize = 33;
     char nameBuff[33];
-    nameBuff[0] = 'u';
-    strcpy(nameBuff+1, name.c_str());
-    if(send(Socket,nameBuff, name.size()+1, 0) == -1){
+    genUserPacket(nameBuff, &buffSize, name.c_str());
+    if(send(Socket,nameBuff, buffSize, 0) == -1){
         perror("send failure");
         exit(16);
     }
