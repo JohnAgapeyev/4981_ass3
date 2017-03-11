@@ -3,7 +3,8 @@
 
 #include <cstdarg>
 #include <climits>
-#include <unordered_set>
+#include <string>
+#include <map>
 
 #define LISTEN_PORT_TCP 35223
 #define LISTENQ 25 //although many kernals define it as 5 usually it can support many more
@@ -13,7 +14,7 @@
 extern char buffer[MAXPACKETSIZE];
 extern int Socket;
 
-extern std::unordered_set<int> socketList;
+extern std::map<int,std::string> socketList;
 
 
 void server();

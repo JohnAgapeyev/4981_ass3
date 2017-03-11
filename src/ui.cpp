@@ -32,7 +32,7 @@ UI::UI():ouTop(0), ouBot(0), selected(0), curChar(0), state(MSG) {
     colsMsg = cols - 42;
     colsUser = 40;
 
-    curMsg[MAXMSG] = '\0';
+    memset(curMsg,0,MAXMSG);
 
     //start at the bottom of the drawable window
     ouBot = rowsUser;
@@ -144,6 +144,54 @@ std::string UI::loopGetHost(){
     return host;
 }
 
+
+void UI::loopGetName(){
+    int c;
+    bool run = true;
+    char name[NAMELEN+1];
+    memset(name, 0, HOSTLEN);
+
+    int cur = 0;
+
+    WINDOW *temp = newwin(4, NAMELEN + 2, rows / 2, cols / 2 - NAMELEN / 2);
+    box(temp,0,0);
+
+    const char *msg = "Enter Username:";
+    mvwprintw(temp, 1, strlen(msg)/2, msg);
+    attron(A_STANDOUT);
+    while(run) {
+        mvwprintw(temp, 2, 1, name);
+        mvwaddch(temp, 2, 1 + cur, ' ');
+        wmove(temp,2,1 + cur);
+        wrefresh(temp);
+        switch(c = getch()){
+            case KEY_F(1):
+                exit(1);
+                break;
+            case KEY_UP:
+            case KEY_DOWN:
+            case KEY_LEFT:
+            case KEY_RIGHT:
+                break;
+            case KEY_BACKSPACE:
+                if(cur > 0)
+                    name[cur--] = 0;
+                break;
+            case '\n':
+            case KEY_ENTER:
+                run = false;
+                break;
+            default:
+                if(cur < HOSTLEN)
+                    name[cur++] = c;
+                break;
+        }
+    }
+    attroff(A_STANDOUT);
+    delwin(temp);
+    username = name;
+}
+
 void UI::loop(){
     int c;
     clear();
@@ -225,8 +273,10 @@ void UI::sendMsg(){
     if(!curChar)
         return;
     addMsg(curMsg);
-
-    if (send(Socket, curMsg, curChar, 0) < 0) {
+    char buff[MAXMSG+1];
+    buff[0] = 'm';
+    strcpy(buff+1,curMsg);
+    if (send(Socket, buff, curChar+1, 0) < 0) {
         perror("Send failure");
     }
     //setMessagePending(curMsg);

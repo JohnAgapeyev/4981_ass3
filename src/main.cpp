@@ -43,24 +43,14 @@ int main(int argc, char *argv[]){
     if(mode){
         UI uim;
         ui = &uim;
-        //dummy data
-        /*
-        for(int i = 0; i < 30; ++i){
-            ui->addUser("A User");
-            ui->addUser("Another User");
-            ui->addUser("Wow Users");
-        }
 
-        for(int i = 0; i < 20; ++i){
-            ui->addMsg("This is a message");
-        }
-        */
         uim.updateOnlineItems();
         uim.updateMessages();
         
         std::string host = uim.loopGetHost();
         if(!host.size())
             return 1;
+        uim.loopGetName();
         std::thread uiWorker([&]{
                 uim.loop();
                 });

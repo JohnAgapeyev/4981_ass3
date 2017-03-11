@@ -39,7 +39,7 @@ void connect(const char *host) {
     if ((server = gethostbyname(host)) == nullptr) {
         //Temporary - to signal error to user
         perror("Bad host");
-        exit(1);
+        exit(14);
     }
 
     sockaddr_in addr;
@@ -52,7 +52,15 @@ void connect(const char *host) {
         //Temporary - to signal error to user
         if (errno != EINPROGRESS && errno != EALREADY) {
             perror("Failed to connect");
-            exit(1);
+            exit(15);
         }
+    }
+    const auto& name = ui->getName();
+    char nameBuff[33];
+    nameBuff[0] = 'u';
+    strcpy(nameBuff+1, name.c_str());
+    if(send(Socket,nameBuff, name.size()+1, 0) == -1){
+        perror("send failure");
+        exit(16);
     }
 }

@@ -12,6 +12,7 @@
 
 #define MAXMSG 128
 #define HOSTLEN 80
+#define NAMELEN 32
 
 class UI {
     public:
@@ -46,6 +47,10 @@ class UI {
 
         void loop();
         std::string loopGetHost();
+        void loopGetName();
+        std::string getName(){
+            return username;
+        }
 
         //resets the ui to blank
         //this will cause flashes so dont use it all the time
@@ -59,6 +64,8 @@ class UI {
         std::deque<std::string> messages;
         char curMsg[MAXMSG+1];
         int curChar;
+
+        std::string username;
 
         Selection state;
 

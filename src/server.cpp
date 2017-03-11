@@ -16,17 +16,17 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <cstdarg>
-#include <unordered_set>
 #include <string>
 #include <iostream>
 #include <thread>
 #include <algorithm>
+#include <map>
 
 #include "headers/server.h"
 #include "headers/main.h"
 
 char buffer[MAXPACKETSIZE];
-std::unordered_set<int> socketList;
+std::map<int,std::string> socketList;
 
 void server(){
     Socket = createSocket(true);
@@ -44,12 +44,12 @@ void listenForPackets() {
 
     if (!(events = (epoll_event *) calloc(MAXEVENTS, sizeof(epoll_event)))) {
         perror("Calloc failure");
-        exit(1);
+        exit(2);
     }
 
     if ((epollfd = epoll_create1(0)) == -1) {
         perror("Epoll create");
-        exit(1);
+        exit(3);
     }
 
     ev.events = EPOLLIN | EPOLLET | EPOLLEXCLUSIVE;
@@ -57,17 +57,19 @@ void listenForPackets() {
 
     if ((epoll_ctl(epollfd, EPOLL_CTL_ADD, Socket, &ev)) == -1) {
         perror("epoll_ctl");
-        exit(1);
+        exit(4);
     }
 
-    char buff[MAXPACKETSIZE];
     ssize_t nbytes = 0;
     int nevents = 0;
 
     for (;;) {
         if ((nevents = epoll_wait(epollfd, events, MAXEVENTS, -1)) == -1) {
+            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                continue;
+            }
             perror("epoll_wait");
-            exit(1);
+            exit(5);
         }
 
 #pragma omp parallel for schedule (static)
@@ -101,7 +103,7 @@ void listenForPackets() {
                 //Peer closed the connection
                 if (mode) {
                     //Handle disconnect on client side
-                    exit(1);
+                    exit(6);
                 } else {
                     socketList.erase(events[i].data.fd);
                 }
@@ -119,22 +121,36 @@ void listenForPackets() {
 
                     if ((epoll_ctl(epollfd, EPOLL_CTL_ADD, ev.data.fd, &ev)) == -1) {
                         perror("epoll_ctl");
-                        exit(1);
+                        exit(7);
                     }
                     //Save address of new client
-                    socketList.insert(ev.data.fd);
+                    if(socketList.find(ev.data.fd) == socketList.end())
+                        socketList[ev.data.fd] = "No Name";
                 } else {
-                    while ((nbytes = recv(events[i].data.fd, buff, MAXPACKETSIZE, 0)) > 0) {
+                    while ((nbytes = recv(events[i].data.fd, buffer, MAXPACKETSIZE, 0)) > 0) {
 #pragma omp task
                         {
-                            buff[nbytes] = '\0';
+                            buffer[nbytes] = '\0';
                             if(mode && ui){
-                                ui->addMsg(buff);
+                                if(buffer[0] == 'u'){
+                                    ui->addUser(buffer+1);
+                                } else if(buffer[0] == 'm'){
+                                    ui->addMsg(buffer+1);
+                                }
                             } else {
-                                printf("read %d from %lu: %s\n",nbytes, events[i].data.fd, buff);
-                                for(const auto fd : socketList) {
-                                    if(fd != events[i].data.fd){
-                                        send(fd, buff, nbytes, 0);
+                                printf("read %d from %d: %s\n", static_cast<int>(nbytes),
+                                        static_cast<int>(events[i].data.fd), buffer);
+                                if(buffer[0] == 'u'){
+                                    socketList[events[i].data.fd] = std::string(buffer+1);
+                                    for(const auto& fd : socketList){
+                                        if(fd.first != events[i].data.fd){
+                                            send(events[i].data.fd, ("u" + fd.second).c_str(), fd.second.size()+1, 0);
+                                        }
+                                    }
+                                }
+                                for(const auto& fd : socketList) {
+                                    if(fd.first != events[i].data.fd){
+                                        send(fd.first, buffer, nbytes, 0);
                                     }
                                 }
                             }
@@ -145,7 +161,7 @@ void listenForPackets() {
                             continue;
                         }
                         perror("Packet read failure");
-                        exit(1);
+                        exit(8);
                     }
                 }
             }
@@ -164,12 +180,12 @@ void listenTCP(int Socket, unsigned long ip, unsigned short port) {
 
     if ((bind(Socket, (struct sockaddr *) &servaddrtcp, sizeof(servaddrtcp))) == -1) {
         perror("Bind TCP");
-        exit(1);
+        exit(9);
     }
 
     if (listen(Socket, LISTENQ) == -1) {
         perror("Listen TCP");
-        exit(1);
+        exit(10);
     }
 }
 
@@ -177,12 +193,12 @@ int createSocket(bool nonblocking) {
     int sock = socket(AF_INET, SOCK_STREAM | (nonblocking * SOCK_NONBLOCK), 0);
     if (sock == -1) {
         perror("Create Socket");
-        exit(1);
+        exit(11);
     }
     int enable = 1;
     if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0) {
         perror("setsockopt(SO_REUSEADDR) failed");
-        exit(1);
+        exit(12);
     }
     return sock;
 }
@@ -191,6 +207,6 @@ int createSocket(bool nonblocking) {
 void makeNonBlock(int socket){
     if(fcntl(socket, F_SETFL, O_NONBLOCK) == -1){
         perror("fctl nonblock");
-        exit(1);
+        exit(13);
     }
 }
