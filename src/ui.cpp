@@ -273,14 +273,13 @@ void UI::popMsgChar(){
 void UI::sendMsg(){
     if(!curChar)
         return;
-    addMsg(curMsg);
+    messages.push_front(username + ": " + std::string(curMsg));
     int buffSize = MAXMSG;
     char buff[MAXMSG];
-    genMsgPacket(buff, &buffSize, curMsg);
+    genMsgPacket(buff, &buffSize, curMsg, username.c_str());
     if (send(Socket, buff, buffSize, 0) < 0) {
         perror("Send failure");
     }
-    //setMessagePending(curMsg);
     wclear(chatInput);
     box(chatInput, 0, 0);
     memset(curMsg, 0, MAXMSG);

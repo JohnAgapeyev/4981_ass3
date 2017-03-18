@@ -135,12 +135,11 @@ void listenForPackets() {
                                 if(buffer[0] == 'u'){
                                     ui->addUser(buffer+1);
                                 } else if(buffer[0] == 'm'){
-                                    int32_t id = *reinterpret_cast<int32_t*>(buffer+1);
-                                    ui->addMsg(buffer+5);
+                                    ui->addMsg(buffer+1);
                                 }
                             } else {
-                                printf("read %d from %d: %s\n", static_cast<int>(nbytes),
-                                        static_cast<int>(events[i].data.fd), buffer);
+                                printf("read %d from %d\n", static_cast<int>(nbytes),
+                                        static_cast<int>(events[i].data.fd));
                                 if(buffer[0] == 'u'){
                                     socketList[events[i].data.fd] = std::string(buffer+1);
                                     for(const auto& fd : socketList){

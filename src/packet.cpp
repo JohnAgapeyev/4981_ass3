@@ -10,12 +10,14 @@ void genUserPacket(char *packet, int *packetSize, const char *name){
     *packetSize = i;
 }
 
-void genMsgPacket(char *packet, int *packetSize, const char *message, int32_t channel){
-    packet[0] = 'm';
-    int32_t *id = reinterpret_cast<int32_t*>(packet + 1);
-    *id = channel;
-    int i = 5;
-    for(int j = 0; i < *packetSize && j < strlen(message); ++i, ++j)
-        packet[i] = message[j];
+void genMsgPacket(char *packet, int *packetSize, const char *message, const char *name){
+    int i = 0;
+    packet[i++] = 'm';
+    for(int j = 0; i < *packetSize && j < strlen(name); ++j)
+        packet[i++] = name[j];
+    packet[i++] = ':';
+    packet[i++] = ' ';
+    for(int j = 0; i < *packetSize && j < strlen(message);++j)
+        packet[i++] = message[j];
     *packetSize = i;
 }
