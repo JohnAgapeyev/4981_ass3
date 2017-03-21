@@ -1,3 +1,42 @@
+/*
+ *  HEADER FILE:
+ *  ui.h
+ *  --
+ *  PROGRAM: 4981_ass3
+ *  --
+ *  FUNCTIONS:
+ *  void addUser(const char *); 
+ *  void updateOnlineItems();
+ *  void updateMessages();
+ *  void addMsgChar(const char c);
+ *  void popMsgChar();
+ *  void rmMsgChar(size_t i);
+ *  void sendMsg();
+ *  void addMsg(const char *c);
+ *  void movUp();
+ *  void movDown();
+ *  void drawMenu();
+ *  void loop();
+ *  std::string loopGetHost();
+ *  void loopGetName();
+ *  std::string getName();
+ *  void clear();
+ *  void update();
+ *  UI();
+ *  ~UI();
+ *  --
+ *  DATE:
+ *  March 20, 2017
+ *  --
+ *  DESIGNER:
+ *  Isaac Morneau
+ *  --
+ *  PROGRAMMER:
+ *  Isaac Morneau
+ *  --
+ *  NOTES:
+ *  This header contains all UI related method declarations
+ */
 #ifndef UI_H
 #define UI_H
 

@@ -1,3 +1,26 @@
+/*
+ *  SOURCE FILE:
+ *  client.cpp
+ *  --
+ *  PROGRAM: 4981_ass3
+ *  --
+ *  FUNCTIONS:
+ *  void client(const char *host);
+ *  void connect(const char *host);
+ *  --
+ *  DATE:
+ *  March 20, 2017
+ *  --
+ *  DESIGNER:
+ *  John Agapeyev
+ *  --
+ *  PROGRAMMER:
+ *  John Agapeyev
+ *  --
+ *  NOTES:
+ *  This files handles the client specific connection calls.
+ */
+
 #include <omp.h>
 #include <cstdio>
 #include <cstdlib>
@@ -28,12 +51,63 @@
 #include "headers/client.h"
 #include "headers/packet.h"
 
+/*
+ *  FUNCTION:
+ *  client
+ *  --
+ *  DATE:
+ *  March 20, 2017
+ *  --
+ *  DESIGNER:
+ *  John Agapeyev
+ *  --
+ *  PROGRAMMER:
+ *  John Agapeyev
+ *  --
+ *  INTERFACE:
+ *  void client(const char *host);
+ *  --
+ *  ARGS:
+ *  const char *host - The hostname to connect to
+ *  --
+ *  RETURNS:
+ *  void
+ *  --
+ *  NOTES:
+ *  Main client function called from main
+ */
 void client(const char *host){
     Socket = createSocket(true);
     connect(host);
     listenForPackets();
 }
 
+/*
+ *  FUNCTION:
+ *  connect
+ *  --
+ *  DATE:
+ *  March 20, 2017
+ *  --
+ *  DESIGNER:
+ *  John Agapeyev
+ *  --
+ *  PROGRAMMER:
+ *  John Agapeyev
+ *  Isaac Morneau
+ *  --
+ *  INTERFACE:
+ *  void connect(const char *host);
+ *  --
+ *  ARGS:
+ *  const char *host - The hostname to connect to
+ *  --
+ *  RETURNS:
+ *  void
+ *  --
+ *  NOTES:
+ *  Connects the client to a given hostname
+ */
 void connect(const char *host) {
     hostent *server;
 

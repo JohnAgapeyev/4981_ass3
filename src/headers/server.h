@@ -1,3 +1,29 @@
+/*
+ *  HEADER FILE:
+ *  server.h
+ *  --
+ *  PROGRAM: 4981_ass3
+ *  --
+ *  FUNCTIONS:
+ *  void server();
+ *  void listenForPackets();
+ *  void listenTCP(int socket, unsigned long ip, unsigned short port);
+ *  void connect(const char *host);
+ *  int createSocket(bool nonblocking);
+ *  void makeNonBlock(int socket);
+ *  --
+ *  DATE:
+ *  March 20, 2017
+ *  --
+ *  DESIGNER:
+ *  John Agapeyev
+ *  --
+ *  PROGRAMMER:
+ *  John Agapeyev
+ *  --
+ *  NOTES:
+ *  This header contains all server related method declarations
+ */
 #ifndef SERVER_H
 #define SERVER_H
 
@@ -15,7 +41,6 @@ extern char buffer[MAXPACKETSIZE];
 extern int Socket;
 
 extern std::map<int,std::string> socketList;
-
 
 void server();
 void listenForPackets();

@@ -1,7 +1,26 @@
-#include <stdio.h>
+/*
+ *  SOURCE FILE:
+ *  main.cpp - A chat application using epoll and OpenMP
+ *  --
+ *  PROGRAM: 4981_ass3
+ *  --
+ *  FUNCTIONS:
+ *  int main(int argc, char **argv);
+ *  --
+ *  DATE:
+ *  March 20, 2017
+ *  --
+ *  DESIGNER:
+ *  John Agapeyev
+ *  Isaac Morneau
+ *  --
+ *  PROGRAMMER:
+ *  Isaac Morneau
+ */
+#include <cstdio>
 #include <getopt.h>
-#include <stdlib.h>
-#include <limits.h>
+#include <cstdlib>
+#include <climits>
 #include <unistd.h>
 #include <thread>
 
@@ -10,14 +29,39 @@
 #include "headers/client.h"
 #include "headers/ui.h"
 
-
 int Socket = 0;
 int port = 54123;
 int mode = 1;
 
 UI *ui = nullptr;
 
-int main(int argc, char *argv[]){
+/*
+ *  FUNCTION:
+ *  main
+ *  --
+ *  DATE:
+ *  March 20, 2017
+ *  --
+ *  DESIGNER:
+ *  John Agapeyev
+ *  --
+ *  PROGRAMMER:
+ *  John Agapeyev
+ *  --
+ *  INTERFACE:
+ *  int main(int argc, char **argv);
+ *  --
+ *  ARGS:
+ *  int argc - The number of commmand line args
+ *  char **argv - The list of command args
+ *  --
+ *  RETURNS:
+ *  int
+ *  --
+ *  NOTES:
+ *  Main entry function
+ */
+int main(int argc, char **argv) {
     int opt;
 
     setenv("OMP_PROC_BIND", "TRUE", 1);

@@ -1,3 +1,42 @@
+/*
+ *  SOURCE FILE:
+ *  ui.cpp
+ *  --
+ *  PROGRAM: 4981_ass3
+ *  --
+ *  FUNCTIONS:
+ *  void addUser(const char *); 
+ *  void updateOnlineItems();
+ *  void updateMessages();
+ *  void addMsgChar(const char c);
+ *  void popMsgChar();
+ *  void rmMsgChar(size_t i);
+ *  void sendMsg();
+ *  void addMsg(const char *c);
+ *  void movUp();
+ *  void movDown();
+ *  void drawMenu();
+ *  void loop();
+ *  std::string loopGetHost();
+ *  void loopGetName();
+ *  std::string getName();
+ *  void clear();
+ *  void update();
+ *  UI();
+ *  ~UI();
+ *  --
+ *  DATE:
+ *  March 20, 2017
+ *  --
+ *  DESIGNER:
+ *  Isaac Morneau
+ *  --
+ *  PROGRAMMER:
+ *  Isaac Morneau
+ *  --
+ *  NOTES:
+ *  This method handles all the UI-related calls
+ */
 #include "headers/ui.h"
 #include "headers/client.h"
 #include "headers/main.h"
@@ -10,9 +49,27 @@
 #include <ncurses.h>
 #include <sys/socket.h>
 
-
 using namespace std;
 
+/*
+ *  FUNCTION:
+ *  UI constructor
+ *  --
+ *  DATE:
+ *  March 20, 2017
+ *  --
+ *  DESIGNER:
+ *  Isaac Morneau
+ *  --
+ *  PROGRAMMER:
+ *  Isaac Morneau
+ *  --
+ *  INTERFACE:
+ *  UI();
+ *  --
+ *  NOTES:
+ *  Creates, initializes and renders the initial window for use in the program
+ */
 UI::UI():ouTop(0), ouBot(0), selected(0), curChar(0), state(MSG) {
     initscr();
     start_color();
@@ -50,6 +107,25 @@ UI::UI():ouTop(0), ouBot(0), selected(0), curChar(0), state(MSG) {
     update();
 }
 
+/*
+ *  FUNCTION:
+ *  UI destructor
+ *  --
+ *  DATE:
+ *  March 20, 2017
+ *  --
+ *  DESIGNER:
+ *  Isaac Morneau
+ *  --
+ *  PROGRAMMER:
+ *  Isaac Morneau
+ *  --
+ *  INTERFACE:
+ *  ~UI();
+ *  --
+ *  NOTES:
+ *  Deletes the window and frees their resources
+ */
 UI::~UI(){
     delwin(userlist);
     delwin(chatMsg);
@@ -57,6 +133,28 @@ UI::~UI(){
     endwin();
 }
 
+/*
+ *  FUNCTION:
+ *  drawMenu
+ *  --
+ *  DATE:
+ *  March 20, 2017
+ *  --
+ *  DESIGNER:
+ *  Isaac Morneau
+ *  --
+ *  PROGRAMMER:
+ *  Isaac Morneau
+ *  --
+ *  INTERFACE:
+ *  void drawMenu();
+ *  --
+ *  RETURNS:
+ *  void
+ *  --
+ *  NOTES:
+ *  Draws the top menu bar onto the ncurses menu
+ */
 void UI::drawMenu(){
     attron(COLOR_PAIR(1));
     mvwprintw(stdscr, 0, 42, "[Exit: F1]");
@@ -79,6 +177,28 @@ void UI::drawMenu(){
         attroff(A_STANDOUT);
 }
 
+/*
+ *  FUNCTION:
+ *  clear
+ *  --
+ *  DATE:
+ *  March 20, 2017
+ *  --
+ *  DESIGNER:
+ *  Isaac Morneau
+ *  --
+ *  PROGRAMMER:
+ *  Isaac Morneau
+ *  --
+ *  INTERFACE:
+ *  void clear();
+ *  --
+ *  RETURNS:
+ *  void
+ *  --
+ *  NOTES:
+ *  Clears the screen of any printed text
+ */
 void UI::clear(){
     memset(curMsg, 0, MAXMSG);
     curChar = 0;
@@ -90,6 +210,29 @@ void UI::clear(){
     box(chatInput, 0, 0);
 }
 
+/*
+ *  FUNCTION:
+ *  update
+ *  --
+ *  DATE:
+ *  March 20, 2017
+ *  --
+ *  DESIGNER:
+ *  Isaac Morneau
+ *  --
+ *  PROGRAMMER:
+ *  Isaac Morneau
+ *  --
+ *  INTERFACE:
+ *  void update();
+ *  --
+ *  RETURNS:
+ *  void
+ *  --
+ *  NOTES:
+ *  Updates the UI screen. This forces a rerender of the screen. This is called whenever an 
+ *  and update to the UI is performed, and the screen needs to render it.
+ */
 void UI::update(){
     wmove(chatInput, 1, 1 + curChar);
     refresh();
@@ -98,6 +241,28 @@ void UI::update(){
     wrefresh(chatInput);
 }
 
+/*
+ *  FUNCTION:
+ *  loopGetHost();
+ *  --
+ *  DATE:
+ *  March 20, 2017
+ *  --
+ *  DESIGNER:
+ *  Isaac Morneau
+ *  --
+ *  PROGRAMMER:
+ *  Isaac Morneau
+ *  --
+ *  INTERFACE:
+ *  std::string loopGetHost();
+ *  --
+ *  RETURNS:
+ *  std::string - The hostname the user entered
+ *  --
+ *  NOTES:
+ *  Waits for the user to enter a hostname and returns it as a string
+ */
 std::string UI::loopGetHost(){
     int c;
     bool run = true;
@@ -145,7 +310,28 @@ std::string UI::loopGetHost(){
     return host;
 }
 
-
+/*
+ *  FUNCTION:
+ *  loopGetName
+ *  --
+ *  DATE:
+ *  March 20, 2017
+ *  --
+ *  DESIGNER:
+ *  Isaac Morneau
+ *  --
+ *  PROGRAMMER:
+ *  Isaac Morneau
+ *  --
+ *  INTERFACE:
+ *  void loopGetName();
+ *  --
+ *  RETURNS:
+ *  void
+ *  --
+ *  NOTES:
+ *  Prompts the user to enter their username and sets it locally for the client
+ */
 void UI::loopGetName(){
     int c;
     bool run = true;
@@ -193,6 +379,28 @@ void UI::loopGetName(){
     username = name;
 }
 
+/*
+ *  FUNCTION:
+ *  loop
+ *  --
+ *  DATE:
+ *  March 20, 2017
+ *  --
+ *  DESIGNER:
+ *  Isaac Morneau
+ *  --
+ *  PROGRAMMER:
+ *  Isaac Morneau
+ *  --
+ *  INTERFACE:
+ *  void loop();
+ *  --
+ *  RETURNS:
+ *  void
+ *  --
+ *  NOTES:
+ *  The main UI update loop that handles key press events.
+ */
 void UI::loop(){
     int c;
     clear();
@@ -240,6 +448,28 @@ void UI::loop(){
     }
 }
 
+/*
+ *  FUNCTION:
+ *  updateMessages
+ *  --
+ *  DATE:
+ *  March 20, 2017
+ *  --
+ *  DESIGNER:
+ *  Isaac Morneau
+ *  --
+ *  PROGRAMMER:
+ *  Isaac Morneau
+ *  --
+ *  INTERFACE:
+ *  void updateMessages();
+ *  --
+ *  RETURNS:
+ *  void
+ *  --
+ *  NOTES:
+ *  Updates the main message window with any newly received messages
+ */
 void UI::updateMessages(){
     int j = rowsMsg - 2;
     wclear(chatMsg);
@@ -254,6 +484,31 @@ void UI::updateMessages(){
     wrefresh(chatInput);
 }
 
+/*
+ *  FUNCTION:
+ *  addMsgChar
+ *  --
+ *  DATE:
+ *  March 20, 2017
+ *  --
+ *  DESIGNER:
+ *  Isaac Morneau
+ *  --
+ *  PROGRAMMER:
+ *  Isaac Morneau
+ *  --
+ *  INTERFACE:
+ *  void addMsgChar(const char c);
+ *  --
+ *  ARGS:
+ *  const char c - The character to add to the current message
+ *  --
+ *  RETURNS:
+ *  void
+ *  --
+ *  NOTES:
+ *  Adds a character to the pending message
+ */
 void UI::addMsgChar(const char c){
     if(curChar < MAXMSG){
         curMsg[curChar++] = c;
@@ -262,6 +517,28 @@ void UI::addMsgChar(const char c){
     }
 }
 
+/*
+ *  FUNCTION:
+ *  popMsgChar
+ *  --
+ *  DATE:
+ *  March 20, 2017
+ *  --
+ *  DESIGNER:
+ *  Isaac Morneau
+ *  --
+ *  PROGRAMMER:
+ *  Isaac Morneau
+ *  --
+ *  INTERFACE:
+ *  void popMsgChar();
+ *  --
+ *  RETURNS:
+ *  void
+ *  --
+ *  NOTES:
+ *  Removes the last char from the pending message
+ */
 void UI::popMsgChar(){
     if(curChar > 0)
         curMsg[curChar--] = 0;
@@ -270,6 +547,28 @@ void UI::popMsgChar(){
     wrefresh(chatInput);
 }
 
+/*
+ *  FUNCTION:
+ *  sendMsg
+ *  --
+ *  DATE:
+ *  March 20, 2017
+ *  --
+ *  DESIGNER:
+ *  Isaac Morneau
+ *  --
+ *  PROGRAMMER:
+ *  Isaac Morneau
+ *  --
+ *  INTERFACE:
+ *  void sendMsg();
+ *  --
+ *  RETURNS:
+ *  void
+ *  --
+ *  NOTES:
+ *  Sends the pending message to the server after generating the required header
+ */
 void UI::sendMsg(){
     if(!curChar)
         return;
@@ -290,6 +589,31 @@ void UI::sendMsg(){
     wrefresh(chatInput);
 }
 
+/*
+ *  FUNCTION:
+ *  addMsg
+ *  --
+ *  DATE:
+ *  March 20, 2017
+ *  --
+ *  DESIGNER:
+ *  Isaac Morneau
+ *  --
+ *  PROGRAMMER:
+ *  Isaac Morneau
+ *  --
+ *  INTERFACE:
+ *  void addMsg(const char *c);
+ *  --
+ *  ARGS:
+ *  cost char *c - The message to add to the message history
+ *  --
+ *  RETURNS:
+ *  void
+ *  --
+ *  NOTES:
+ *  Adds a message to the message history log
+ */
 void UI::addMsg(const char *c){
     if(strlen(c)){
         messages.push_front(c);
@@ -297,6 +621,31 @@ void UI::addMsg(const char *c){
     }
 }
 
+/*
+ *  FUNCTION:
+ *  addUser
+ *  --
+ *  DATE:
+ *  March 20, 2017
+ *  --
+ *  DESIGNER:
+ *  Isaac Morneau
+ *  --
+ *  PROGRAMMER:
+ *  Isaac Morneau
+ *  --
+ *  INTERFACE:
+ *  void addUser(const char *user);
+ *  --
+ *  ARGS:
+ *  const char *user - The username to add to the list
+ *  --
+ *  RETURNS:
+ *  void
+ *  --
+ *  NOTES:
+ *  Adds a username to the list of connected clients
+ */
 void UI::addUser(const char *user){
     //40 - 2 from selection char
     int pad = 32 - strlen(user);
@@ -307,6 +656,28 @@ void UI::addUser(const char *user){
     updateOnlineItems();
 }
 
+/*
+ *  FUNCTION:
+ *  updateOnlineItems
+ *  --
+ *  DATE:
+ *  March 20, 2017
+ *  --
+ *  DESIGNER:
+ *  Isaac Morneau
+ *  --
+ *  PROGRAMMER:
+ *  Isaac Morneau
+ *  --
+ *  INTERFACE:
+ *  void updateOnlineItems();
+ *  --
+ *  RETURNS:
+ *  void
+ *  --
+ *  NOTES:
+ *  Updates the client list based on client connections or disconnections
+ */
 void UI::updateOnlineItems() {
     for(int i = ouTop, j = 1; (i+1 < ouBot) && (j < rowsUser) && (i < (int)onlineUsers.size()); ++i, ++j){
         if(i == selected) {
@@ -320,6 +691,28 @@ void UI::updateOnlineItems() {
     wrefresh(userlist);
 }
 
+/*
+ *  FUNCTION:
+ *  movUp
+ *  --
+ *  DATE:
+ *  March 20, 2017
+ *  --
+ *  DESIGNER:
+ *  Isaac Morneau
+ *  --
+ *  PROGRAMMER:
+ *  Isaac Morneau
+ *  --
+ *  INTERFACE:
+ *  void movUp();
+ *  --
+ *  RETURNS:
+ *  void
+ *  --
+ *  NOTES:
+ *  Moves the cursor up one level in the client list
+ */
 void UI::movUp(){
     if(state != USER)
         return;
@@ -335,6 +728,28 @@ void UI::movUp(){
     updateOnlineItems();
 }
 
+/*
+ *  FUNCTION:
+ *  movDown
+ *  --
+ *  DATE:
+ *  March 20, 2017
+ *  --
+ *  DESIGNER:
+ *  Isaac Morneau
+ *  --
+ *  PROGRAMMER:
+ *  Isaac Morneau
+ *  --
+ *  INTERFACE:
+ *  void movDown();
+ *  --
+ *  RETURNS:
+ *  void
+ *  --
+ *  NOTES:
+ *  Moves the cursor down one level in the client list
+ */
 void UI::movDown(){
     if(state != USER)
         return;

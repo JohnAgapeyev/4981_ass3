@@ -1,3 +1,28 @@
+/*
+ *  SOURCE FILE:
+ *  server.cpp
+ *  --
+ *  PROGRAM: 4981_ass3
+ *  --
+ *  FUNCTIONS:
+ *  void server();
+ *  void listenForPackets();
+ *  void listenTCP(int Socket, unsigned long ip, unsigned short port);
+ *  int createSocket(bool nonblocking);
+ *  void makeNonBlock(int socket);
+ *  --
+ *  DATE:
+ *  March 20, 2017
+ *  --
+ *  DESIGNER:
+ *  John Agapeyev
+ *  --
+ *  PROGRAMMER:
+ *  John Agapeyev
+ *  --
+ *  NOTES:
+ *  This file handles server-specific calls, as well as a shared method used for handling the receiving of packets
+ */
 #include <omp.h>
 #include <cstdio>
 #include <cstdlib>
@@ -28,6 +53,28 @@
 char buffer[MAXPACKETSIZE];
 std::map<int,std::string> socketList;
 
+/*
+ *  FUNCTION:
+ *  server
+ *  --
+ *  DATE:
+ *  March 20, 2017
+ *  --
+ *  DESIGNER:
+ *  John Agapeyev
+ *  --
+ *  PROGRAMMER:
+ *  John Agapeyev
+ *  --
+ *  INTERFACE:
+ *  void server();
+ *  --
+ *  RETURNS:
+ *  void
+ *  --
+ *  NOTES:
+ *  Main server method called from main. It initializes server socket and starts listening for packets
+ */
 void server(){
     Socket = createSocket(true);
     memset(buffer, 0, MAXPACKETSIZE);
@@ -36,7 +83,30 @@ void server(){
     listenForPackets();
 }
 
-
+/*
+ *  FUNCTION:
+ *  listenForPackets
+ *  --
+ *  DATE:
+ *  March 20, 2017
+ *  --
+ *  DESIGNER:
+ *  John Agapeyev
+ *  --
+ *  PROGRAMMER:
+ *  John Agapeyev
+ *  --
+ *  INTERFACE:
+ *  void listenForPackets();
+ *  --
+ *  RETURNS:
+ *  void
+ *  --
+ *  NOTES:
+ *  Listens for incoming packets on the server socket. It does this through a combination of epoll for event-driven reads
+ *  and OpenMP handling simultaneous processing of clients. New clients are added to a client list, while existing clients have their messages sent
+ *  off for processing.
+ */
 void listenForPackets() {
     int epollfd;
     epoll_event ev;
@@ -170,6 +240,33 @@ void listenForPackets() {
     free(events);
 }
 
+/*
+ *  FUNCTION:
+ *  listenTCP
+ *  --
+ *  DATE:
+ *  March 20, 2017
+ *  --
+ *  DESIGNER:
+ *  John Agapeyev
+ *  --
+ *  PROGRAMMER:
+ *  John Agapeyev
+ *  --
+ *  INTERFACE:
+ *  void listenTCP(int Socket, unsigned long ip, unsigned short port);
+ *  --
+ *  ARGS:
+ *  int Socket - The socket to bind and set to listen mode
+ *  unsigned long ip - The ip address in network byte order to bind to
+ *  unsigned short port - The prot number in network byte order to bind to
+ *  --
+ *  RETURNS:
+ *  void
+ *  --
+ *  NOTES:
+ *  Binds the socket and sets it to listen on the specified address and port
+ */
 void listenTCP(int Socket, unsigned long ip, unsigned short port) {
     //TCP Setup
     struct sockaddr_in servaddrtcp;
@@ -189,6 +286,31 @@ void listenTCP(int Socket, unsigned long ip, unsigned short port) {
     }
 }
 
+/*
+ *  FUNCTION:
+ *  createSocket
+ *  --
+ *  DATE:
+ *  March 20, 2017
+ *  --
+ *  DESIGNER:
+ *  John Agapeyev
+ *  --
+ *  PROGRAMMER:
+ *  John Agapeyev
+ *  --
+ *  INTERFACE:
+ *  int createSocket(bool nonblocking);
+ *  --
+ *  ARGS:
+ *  bool nonblocking - Whether the socket being create is non-blocking
+ *  --
+ *  RETURNS:
+ *  int - The descriptor for the socket that was created
+ *  --
+ *  NOTES:
+ *  Creates the socket and sets it to non-blocking mode if specified
+ */
 int createSocket(bool nonblocking) {
     int sock = socket(AF_INET, SOCK_STREAM | (nonblocking * SOCK_NONBLOCK), 0);
     if (sock == -1) {
@@ -203,7 +325,31 @@ int createSocket(bool nonblocking) {
     return sock;
 }
 
-
+/*
+ *  FUNCTION:
+ *  makeNonBlock
+ *  --
+ *  DATE:
+ *  March 20, 2017
+ *  --
+ *  DESIGNER:
+ *  John Agapeyev
+ *  --
+ *  PROGRAMMER:
+ *  John Agapeyev
+ *  --
+ *  INTERFACE:
+ *  void makeNonBlock(int socket);
+ *  --
+ *  ARGS:
+ *  int socket - The socket descriptor to change
+ *  --
+ *  RETURNS:
+ *  void
+ *  --
+ *  NOTES:
+ *  Sets an existing socket to nonblocking mode
+ */
 void makeNonBlock(int socket){
     if(fcntl(socket, F_SETFL, O_NONBLOCK) == -1){
         perror("fctl nonblock");
