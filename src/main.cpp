@@ -18,23 +18,16 @@
  *  Isaac Morneau
  */
 #include <cstdio>
+#include <iostream>
 #include <getopt.h>
 #include <cstdlib>
 #include <climits>
 #include <unistd.h>
-#include <thread>
 
-#include "headers/main.h"
 #include "headers/server.h"
 #include "headers/client.h"
-#include "headers/ui.h"
 
-int Socket = 0;
-int port = 54123;
-int mode = 1;
-
-UI *ui = nullptr;
-
+using namespace std;
 /*
  *  FUNCTION:
  *  main
@@ -62,12 +55,12 @@ UI *ui = nullptr;
  *  Main entry function
  */
 int main(int argc, char **argv) {
-    int opt;
-
+    int opt, mode = 1;
+    //set openmp variables for even better performance
     setenv("OMP_PROC_BIND", "TRUE", 1);
     setenv("OMP_DYNAMIC", "TRUE", 1);
 
-    while((opt = getopt(argc, argv, "csp:")) != -1){
+    while((opt = getopt(argc, argv, "cs")) != -1){
         switch(opt){
             case 's'://server
                 mode = 0;
@@ -75,34 +68,17 @@ int main(int argc, char **argv) {
             case 'c'://client
                 mode = 1;
                 break;
-            case 'p'://port
-                if(!(port = atoi(optarg)) || port < 0 || port > USHRT_MAX) {
-                    printf("port must be a positive integer\n");
-                    return 1;
-                }
+            default:
                 break;
         }
     }
 
     if(mode){
-        UI uim;
-        ui = &uim;
-
-        uim.updateOnlineItems();
-        uim.updateMessages();
-        
-        std::string host = uim.loopGetHost();
-        if(!host.size())
-            return 1;
-        uim.loopGetName();
-        std::thread uiWorker([&]{
-                uim.loop();
-                });
-
+        string host;
+        cout << "Please enter hostname: " << endl;
+        cin >> host;
         client(host.c_str());
-        uiWorker.join();
     } else {
         server();
     }
-    close(Socket);
 }

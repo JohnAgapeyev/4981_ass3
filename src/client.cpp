@@ -1,141 +1,73 @@
-/*
- *  SOURCE FILE:
- *  client.cpp
- *  --
- *  PROGRAM: 4981_ass3
- *  --
- *  FUNCTIONS:
- *  void client(const char *host);
- *  void connect(const char *host);
- *  --
- *  DATE:
- *  March 20, 2017
- *  --
- *  DESIGNER:
- *  John Agapeyev
- *  --
- *  PROGRAMMER:
- *  John Agapeyev
- *  --
- *  NOTES:
- *  This files handles the client specific connection calls.
- */
-
-#include <omp.h>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <fcntl.h>
-#include <unistd.h>
-#include <getopt.h>
-#include <errno.h>
-#include <sys/types.h>
-#include <sys/epoll.h>
-#include <sys/time.h>
-#include <sys/socket.h>
-#include <sys/signal.h>
-#include <sys/time.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <arpa/inet.h>
-#include <cstdarg>
-#include <unordered_map>
-#include <string>
-#include <iostream>
-#include <thread>
-#include <atomic>
-
-
-#include "headers/main.h"
+#include "headers/networkhelpers.h"
 #include "headers/server.h"
 #include "headers/client.h"
-#include "headers/packet.h"
 
-/*
- *  FUNCTION:
- *  client
- *  --
- *  DATE:
- *  March 20, 2017
- *  --
- *  DESIGNER:
- *  John Agapeyev
- *  --
- *  PROGRAMMER:
- *  John Agapeyev
- *  --
- *  INTERFACE:
- *  void client(const char *host);
- *  --
- *  ARGS:
- *  const char *host - The hostname to connect to
- *  --
- *  RETURNS:
- *  void
- *  --
- *  NOTES:
- *  Main client function called from main
- */
+
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <errno.h>
+#include <cstdio>
+#include <iostream>
+#include <cstring>
+#include <thread>
+
+using namespace std;
+
 void client(const char *host){
-    Socket = createSocket(true);
-    connect(host);
-    listenForPackets();
+    thread t(listenForPackets, true, host);
+
+    string text;
+
+    cout << "Please enter your username: " << endl;
+    cin >> text;
+
+    if(send(socketfd, text.c_str(), text.size()+1, 0) == -1){
+        perror("send failure");
+        exit(3);
+    }
+
+    while(getline(cin, text)) {
+        if(text == "/exit")
+            break;
+        if(send(socketfd, text.c_str(), text.size()+1, 0) == -1){
+            perror("send failure");
+            exit(4);
+        }
+    }
+
+    exit(0);
+    t.join();
 }
 
-/*
- *  FUNCTION:
- *  connect
- *  --
- *  DATE:
- *  March 20, 2017
- *  --
- *  DESIGNER:
- *  John Agapeyev
- *  --
- *  PROGRAMMER:
- *  John Agapeyev
- *  Isaac Morneau
- *  --
- *  INTERFACE:
- *  void connect(const char *host);
- *  --
- *  ARGS:
- *  const char *host - The hostname to connect to
- *  --
- *  RETURNS:
- *  void
- *  --
- *  NOTES:
- *  Connects the client to a given hostname
- */
-void connect(const char *host) {
+void connectSock(int socket, const char *host) {
     hostent *server;
 
     if ((server = gethostbyname(host)) == nullptr) {
-        //Temporary - to signal error to user
         perror("Bad host");
-        exit(14);
+        exit(1);
     }
 
     sockaddr_in addr;
     memset(&addr, 0, sizeof(sockaddr_in));
     addr.sin_family = AF_INET;
     memmove(&addr.sin_addr.s_addr, server->h_addr, server->h_length);
-    addr.sin_port = htons(LISTEN_PORT_TCP);
+    addr.sin_port = htons(LISTEN_PORT);
 
-    if (connect(Socket, (sockaddr *) &addr, sizeof(addr)) < 0) {
-        //Temporary - to signal error to user
+    if (connect(socket, (sockaddr *) &addr, sizeof(addr)) < 0) {
         if (errno != EINPROGRESS && errno != EALREADY) {
             perror("Failed to connect");
-            exit(15);
+            exit(2);
         }
     }
-    const auto& name = ui->getName();
-    int buffSize = 33;
-    char nameBuff[33];
-    genUserPacket(nameBuff, &buffSize, name.c_str());
-    if(send(Socket,nameBuff, buffSize, 0) == -1){
-        perror("send failure");
-        exit(16);
-    }
+}
+
+void closeClient(int socket){
+
+}
+void recvClient(int socket, const char *buffer, int packetSize){
+    printf("[%d]> %s\n", socket, buffer);
 }

@@ -5,19 +5,21 @@
  *  PROGRAM: 4981_ass3
  *  --
  *  FUNCTIONS:
- *  void listenTCP(int socket, unsigned long ip, unsigned short port);
- *  void connect(const char *host);
  *  void client(const char *host);
- *  int createSocket(bool nonblocking);
+ *  void connectSock(int socket, const char *host);
+ *  void closeClient(int socket);
+ *  void recvClient(int socket, const char *buffer, int packetSize);
  *  --
  *  DATE:
  *  March 20, 2017
  *  --
  *  DESIGNER:
  *  John Agapeyev
+ *  Isaac Morneau
  *  --
  *  PROGRAMMER:
  *  John Agapeyev
+ *  Isaac Morneau
  *  --
  *  NOTES:
  *  This header contains all client related method declarations
@@ -29,9 +31,8 @@
 #include <climits>
 #include <unordered_map>
 
-void listenTCP(int socket, unsigned long ip, unsigned short port);
-void connect(const char *host);
 void client(const char *host);
-int createSocket(bool nonblocking);
-
+void connectSock(int socket, const char *host);
+void closeClient(int socket);
+void recvClient(int socket, const char *buffer, int packetSize);
 #endif
