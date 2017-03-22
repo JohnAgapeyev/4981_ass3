@@ -14,28 +14,39 @@
 #include <iostream>
 #include <cstring>
 #include <thread>
+#include <sstream>
+#include <map>
 
 using namespace std;
 
-void client(const char *host){
-    thread t(listenForPackets, true, host);
+map<int,string> users;
 
-    string text;
+void client(){
+    thread t(listenForPackets, true);
+    users[0] = "Server";
+    //those sweet sweet spin locks
+    while(!socketfd);
+
+    string name;
 
     cout << "Please enter your username: " << endl;
-    cin >> text;
-
-    if(send(socketfd, text.c_str(), text.size()+1, 0) == -1){
+    if (!getline(cin, name)) {
+        //they closed stdin, just quit silently
+        exit(1);
+    }
+    string text { "/set name " };
+    text += name;
+    if (send(socketfd, text.c_str(), text.size()+1, 0) == -1) {
         perror("send failure");
-        exit(3);
+        exit(2);
     }
 
-    while(getline(cin, text)) {
-        if(text == "/exit")
+    while (getline(cin, text)) {
+        if (text == "/exit")
             break;
-        if(send(socketfd, text.c_str(), text.size()+1, 0) == -1){
+        if (send(socketfd, text.c_str(), text.size()+1, 0) == -1) {
             perror("send failure");
-            exit(4);
+            exit(3);
         }
     }
 
@@ -43,12 +54,16 @@ void client(const char *host){
     t.join();
 }
 
-void connectSock(int socket, const char *host) {
+void connectSock(int socket) {
     hostent *server;
+    string host;
 
-    if ((server = gethostbyname(host)) == nullptr) {
-        perror("Bad host");
-        exit(1);
+    while(1){
+        printf("Please enter hostname\n");
+        getline(cin,host);
+        if ((server = gethostbyname(host.c_str())) != nullptr)
+            break;
+        printf("Invalid Host,\n");
     }
 
     sockaddr_in addr;
@@ -60,7 +75,7 @@ void connectSock(int socket, const char *host) {
     if (connect(socket, (sockaddr *) &addr, sizeof(addr)) < 0) {
         if (errno != EINPROGRESS && errno != EALREADY) {
             perror("Failed to connect");
-            exit(2);
+            exit(4);
         }
     }
 }
@@ -69,5 +84,27 @@ void closeClient(int socket){
 
 }
 void recvClient(int socket, const char *buffer, int packetSize){
-    printf("[%d]> %s\n", socket, buffer);
+    stringstream ss{string{buffer}};
+    string temp;
+    int id;
+    
+    switch(*buffer){
+        case '/':
+            ss >> temp;
+            if (temp == "/userupdate") {
+                while(ss >> id >> temp){
+                    users[id] = temp;
+                    if(!getline(ss,temp)){
+                        break;
+                    }
+                    users[id] += temp;
+                }
+            }
+            break;
+        default:
+            ss >> id;
+            getline(ss, temp);
+            cout << '[' << users[id] << "]: " << temp << endl;
+            break;
+    }
 }

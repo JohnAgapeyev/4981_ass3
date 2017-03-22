@@ -46,7 +46,7 @@ void makeNonblock(int sock) {
     }
 }
 
-void listenForPackets(bool isClient, const char *host) {
+void listenForPackets(bool isClient) {
     int epollfd;
     epoll_event evl;
     epoll_event *events;
@@ -67,9 +67,8 @@ void listenForPackets(bool isClient, const char *host) {
 
     evl.events = EPOLLIN | EPOLLET | EPOLLEXCLUSIVE;
     evl.data.fd = createNonblock();
-    socketfd = evl.data.fd;
     if(isClient){
-        connectSock(evl.data.fd, host);
+        connectSock(evl.data.fd);
     } else {
         listenSock(evl.data.fd);
     }
@@ -78,6 +77,8 @@ void listenForPackets(bool isClient, const char *host) {
         perror("epoll_ctl");
         exit(3);
     }
+    
+    socketfd = evl.data.fd;
 
     for (;;) {
         if ((nevents = epoll_wait(epollfd, events, MAXEVENTS, -1)) == -1) {

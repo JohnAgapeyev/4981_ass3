@@ -36,10 +36,10 @@ using namespace std;
  *  March 20, 2017
  *  --
  *  DESIGNER:
- *  John Agapeyev
+ *  Isaac Morneau
  *  --
  *  PROGRAMMER:
- *  John Agapeyev
+ *  Isaac Morneau
  *  --
  *  INTERFACE:
  *  int main(int argc, char **argv);
@@ -53,9 +53,11 @@ using namespace std;
  *  --
  *  NOTES:
  *  Main entry function
+ *  
  */
 int main(int argc, char **argv) {
-    int opt, mode = 1;
+    int opt;
+    bool isClient = true;
     //set openmp variables for even better performance
     setenv("OMP_PROC_BIND", "TRUE", 1);
     setenv("OMP_DYNAMIC", "TRUE", 1);
@@ -63,22 +65,21 @@ int main(int argc, char **argv) {
     while((opt = getopt(argc, argv, "cs")) != -1){
         switch(opt){
             case 's'://server
-                mode = 0;
+                isClient = false;
                 break;
             case 'c'://client
-                mode = 1;
-                break;
             default:
+                isClient = true;
                 break;
         }
     }
-
-    if(mode){
-        string host;
-        cout << "Please enter hostname: " << endl;
-        cin >> host;
-        client(host.c_str());
+    if (isClient) {
+        cout << "[Client]" << endl;
+        client();
+        cout << "[Done]" << endl;
     } else {
+        cout << "[Server]" << endl;
         server();
+        cout << "[Done]" << endl;
     }
 }

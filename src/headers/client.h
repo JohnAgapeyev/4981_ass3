@@ -31,8 +31,8 @@
 #include <climits>
 #include <unordered_map>
 
-void client(const char *host);
-void connectSock(int socket, const char *host);
+void client();
+void connectSock(int socket);
 void closeClient(int socket);
 void recvClient(int socket, const char *buffer, int packetSize);
 #endif

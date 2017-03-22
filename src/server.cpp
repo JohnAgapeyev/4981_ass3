@@ -10,11 +10,12 @@
 #include <netinet/in.h>
 #include <errno.h>
 #include <cstdio>
-#include <set>
+#include <map>
+#include <sstream>
 
 using namespace std;
 
-set<int> sockets;
+map<int, string> sockets;
 
 void server() {
     listenForPackets(false);
@@ -42,16 +43,65 @@ void closeServer(int sock){
     sockets.erase(sock);
 }
 
-void recvServer(int sock, const char *buffer, int packetSize){
-    if(!sockets.count(sock))
-        sockets.insert(sock);
-    printf("from %d read %d:%s\n", sock, packetSize, buffer);
-    for(const auto fd : sockets) {
-        if(fd != sock) {
-            if(send(fd, buffer, packetSize, 0) == -1){
-                perror("send");
-                //dont exit, try and continue
+void recvServer(int sock, const char *buffer, int packetSize) {
+    string temp(buffer);
+    stringstream ss;
+    switch (*buffer) {
+        case '/':
+            {
+                ss.str(temp);
+                ss.clear();
+
+                ss >> temp;
+                if (temp == "/users") {
+                    ss.str("");
+                    ss << "0 Current Users:";
+                    for(const auto& us : sockets)
+                        ss << ' ' << us.first << ':' << us.second;
+                    temp = ss.str();
+                    printf("sending userlist %s\n", temp.c_str());
+                    if (send(sock, temp.c_str(), temp.size()+1, 0) == -1) {
+                        perror("send");
+                        exit(7);
+                    }
+                } else if (temp == "/set") {
+                    ss >> temp;
+                    if(temp == "name") {
+                        ss >> temp;
+                        sockets[sock] = temp;
+                        getline(ss, temp);
+                        sockets[sock] = temp;
+
+                        ss.str("");
+                        ss.clear();
+                        ss << "/userupdate";
+                        for(const auto& fd : sockets)
+                            ss << '\n' << fd.first << ' ' << fd.second;
+                        temp = ss.str();
+                        printf("sending updated client list, %s\n", temp.c_str());
+                        for(const auto& fd : sockets) {
+                            if (send(fd.first, temp.c_str(), temp.size()+1, 0) == -1) {
+                                perror("send");
+                                exit(8);
+                            }
+                        }
+                    }
+                }
             }
-        }
+            break;
+        default:
+            {
+                ss << sock << ' ' << temp;
+                temp = ss.str();
+                for (const auto& fd : sockets) {
+                    if (fd.first != sock) {
+                        if (send(fd.first, temp.c_str(), temp.size()+1, 0) == -1) {
+                            perror("send");
+                            exit(9);
+                        }
+                    }
+                }
+                break;
+            }
     }
 }

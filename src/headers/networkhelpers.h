@@ -9,7 +9,7 @@ constexpr int MAXBUFFER = USHRT_MAX;
 
 int createNonblock();
 void makeNonblock(int sock);
-void listenForPackets(bool isClient, const char *host = nullptr);
+void listenForPackets(bool isClient);
 
 //the socket made and used as the primary in epoll
 extern int socketfd;
