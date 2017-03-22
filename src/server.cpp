@@ -145,8 +145,6 @@ void listenForPackets() {
 #pragma omp parallel for schedule (static)
         for (int i = 0; i < nevents; ++i) {
             if (events[i].events & EPOLLERR) {
-                perror("Socket error1");
-
                 if (mode) {
                     //Handle error on client side
                     ssize_t errorVal;
@@ -185,17 +183,31 @@ void listenForPackets() {
                     sockaddr addr;
                     socklen_t addrLen;
 
-                    ev.data.fd = accept(Socket, &addr, &addrLen);
+                    epoll_event newEv;
+                    memset(&newEv, 0, sizeof(epoll_event));
+                    newEv.events = EPOLLIN | EPOLLET | EPOLLEXCLUSIVE;
 
-                    makeNonBlock(ev.data.fd);
+                    int clientSock = accept(Socket, nullptr, nullptr);
+                    if (clientSock == -1) {
+                        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                            continue;
+                        }
+                        perror("Accept");
+                        continue;
+                    }
 
-                    if ((epoll_ctl(epollfd, EPOLL_CTL_ADD, ev.data.fd, &ev)) == -1) {
+                    makeNonBlock(clientSock);
+
+                    newEv.data.fd = clientSock;
+
+                    if ((epoll_ctl(epollfd, EPOLL_CTL_ADD, clientSock, &newEv)) == -1) {
                         perror("epoll_ctl");
                         exit(7);
                     }
                     //Save address of new client
-                    if(socketList.find(ev.data.fd) == socketList.end())
-                        socketList[ev.data.fd] = "No Name";
+                    if(socketList.find(clientSock) == socketList.end()){
+                        socketList[clientSock] = "No Name";
+                    }
                 } else {
                     while ((nbytes = recv(events[i].data.fd, buffer, MAXPACKETSIZE, 0)) > 0) {
 #pragma omp task
