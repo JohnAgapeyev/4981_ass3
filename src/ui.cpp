@@ -577,7 +577,11 @@ void UI::sendMsg(){
     char buff[MAXMSG];
     genMsgPacket(buff, &buffSize, curMsg, username.c_str());
     if (send(Socket, buff, buffSize, 0) < 0) {
-        perror("Send failure");
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            
+        } else {
+            perror("Send failure");
+        }
     }
     wclear(chatInput);
     box(chatInput, 0, 0);

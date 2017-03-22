@@ -135,6 +135,9 @@ void connect(const char *host) {
     char nameBuff[33];
     genUserPacket(nameBuff, &buffSize, name.c_str());
     if(send(Socket,nameBuff, buffSize, 0) == -1){
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            return;
+        }
         perror("send failure");
         exit(16);
     }
