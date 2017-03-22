@@ -180,9 +180,6 @@ void listenForPackets() {
             }
             if (events[i].events & EPOLLIN) {
                 if (!mode && events[i].data.fd == Socket) {
-                    sockaddr addr;
-                    socklen_t addrLen;
-
                     epoll_event newEv;
                     memset(&newEv, 0, sizeof(epoll_event));
                     newEv.events = EPOLLIN | EPOLLET | EPOLLEXCLUSIVE;
@@ -220,8 +217,7 @@ void listenForPackets() {
                                     ui->addMsg(buffer+1);
                                 }
                             } else {
-                                printf("read %d from %d\n", static_cast<int>(nbytes),
-                                        static_cast<int>(events[i].data.fd));
+                                printf("read %d from %d\n", static_cast<int>(nbytes), static_cast<int>(events[i].data.fd));
                                 if(buffer[0] == 'u'){
                                     socketList[events[i].data.fd] = std::string(buffer+1);
                                     for(const auto& fd : socketList){
