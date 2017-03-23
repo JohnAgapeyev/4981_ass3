@@ -59,11 +59,11 @@ void connectSock(int socket) {
     string host;
 
     while(1){
-        printf("Please enter hostname\n");
+        cout << "Please enter hostname" << endl;
         getline(cin,host);
         if ((server = gethostbyname(host.c_str())) != nullptr)
             break;
-        printf("Invalid Host,\n");
+        cout << "Invalid Host." << endl;
     }
 
     sockaddr_in addr;
@@ -78,10 +78,12 @@ void connectSock(int socket) {
             exit(4);
         }
     }
+    cout << "Connected to server [" << host << ']' << endl;
 }
 
 void closeClient(int socket){
-    users.erase(socket);
+    cout << "Server Closed." << endl;
+    exit(0);
 }
 void recvClient(int socket, const char *buffer, int packetSize){
     string temp(buffer);
@@ -91,6 +93,7 @@ void recvClient(int socket, const char *buffer, int packetSize){
         case '/':
             ss >> temp;
             if (temp == "/userupdate") {
+                users.clear();
                 while(ss >> id >> temp){
                     users[id] = temp;
                     if(!getline(ss,temp)){

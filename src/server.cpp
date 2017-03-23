@@ -17,6 +17,7 @@
 using namespace std;
 
 map<int, string> sockets;
+map<int, string> channels;
 
 void server() {
     listenForPackets(false);
@@ -42,6 +43,7 @@ void listenSock(int socket){
 
 void closeServer(int sock){
     sockets.erase(sock);
+    channels.erase(sock);
 }
 
 void recvServer(int sock, const char *buffer, int packetSize) {
@@ -72,6 +74,11 @@ void recvServer(int sock, const char *buffer, int packetSize) {
                 } else if (temp == "/set") {
                     ss >> temp;
                     if(temp == "name") {
+                        //set channel name if the user is new
+                        if(!channels.count(sock))
+                            channels[sock] = "main";
+
+                        //get trimmed username
                         ss >> temp;
                         sockets[sock] = temp;
                         if(getline(ss, temp))
@@ -91,6 +98,28 @@ void recvServer(int sock, const char *buffer, int packetSize) {
                             }
                         }
                     }
+                } else if (temp == "/channels") {
+                    if (ss >> temp) {
+                        if (temp == "reset") {
+                            for(auto& ch : channels)
+                                ch.second = "main";
+                        } else if (temp == "list") {
+                            ss.str("");
+                            ss.clear();
+                            ss << "Current Channels";
+                            for (const auto& us : channels)
+                                ss << '\n' << sockets[us.first] << ':' << us.second;
+                            temp = ss.str();
+                            if (send(sock, temp.c_str(), temp.size()+1, 0) == -1) {
+                                perror("send");
+                                exit(7);
+                            }
+                        } else {
+                            channels[sock] = temp;
+                        }
+                    } else {
+                        channels[sock] = "main";
+                    }
                 }
             }
             break;
@@ -99,12 +128,17 @@ void recvServer(int sock, const char *buffer, int packetSize) {
                 ss << sock << ' ' << temp;
                 temp = ss.str();
                 for (const auto& fd : sockets) {
-                    if (fd.first != sock) {
-                        if (send(fd.first, temp.c_str(), temp.size()+1, 0) == -1) {
-                            perror("send");
-                            exit(9);
+                    auto &t = channels[fd.first];
+                    for (const auto& cd : channels) {
+                        if (cd.first == sock || cd.first == fd.first)
+                            continue;
+                        if (t == cd.second) {
+                                if (send(cd.first, temp.c_str(), temp.size()+1, 0) == -1) {
+                                    perror("send");
+                                    exit(9);
+                                }
+                            }
                         }
-                    }
                 }
                 break;
             }
