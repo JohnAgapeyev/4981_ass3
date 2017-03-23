@@ -2,6 +2,7 @@
 #include "headers/networkhelpers.h"
 
 #include <cstring>
+#include <cctype>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -50,9 +51,10 @@ void recvServer(int sock, const char *buffer, int packetSize) {
     string temp(buffer);
     stringstream ss(temp);
     switch (*buffer) {
-        case '/':
+        case '/'://its a command
             {
                 ss >> temp;
+                //list the ips
                 if (temp == "/ips") {
                     ss.str("");
                     ss.clear();
@@ -71,6 +73,7 @@ void recvServer(int sock, const char *buffer, int packetSize) {
                         perror("send");
                         exit(7);
                     }
+                    //set the name property
                 } else if (temp == "/set") {
                     ss >> temp;
                     if(temp == "name") {
@@ -87,6 +90,7 @@ void recvServer(int sock, const char *buffer, int packetSize) {
                         ss.str("");
                         ss.clear();
 
+                        //construct packet of all other connected users
                         ss << "/userupdate ";
                         for(const auto& fd : sockets)
                             ss << fd.first << ' ' << fd.second << '\n';
@@ -98,15 +102,18 @@ void recvServer(int sock, const char *buffer, int packetSize) {
                             }
                         }
                     }
+                    //channel functions
                 } else if (temp == "/channels") {
                     if (ss >> temp) {
-                        if (temp == "reset") {
+                        //force all channels to a new channel
+                        if (temp == "force") {
+                            ss >> temp;
                             for(auto& ch : channels)
-                                ch.second = "main";
+                                ch.second = temp;
                         } else if (temp == "list") {
                             ss.str("");
                             ss.clear();
-                            ss << "Current Channels";
+                            ss << "Current Channels:";
                             for (const auto& us : channels)
                                 ss << '\n' << sockets[us.first] << ':' << us.second;
                             temp = ss.str();
@@ -120,6 +127,52 @@ void recvServer(int sock, const char *buffer, int packetSize) {
                     } else {
                         channels[sock] = "main";
                     }
+                } else if(temp == "/pm") {
+                    int id;
+                    ss >> id;
+                    if(ss) {
+                        if (sockets.count(id)){
+                            getline(ss, temp);
+                            ss.str("");
+                            ss.clear();
+                            //blank name with pm title
+                            ss << "0 " << sockets[sock] << ">:" << temp;
+                            temp = ss.str();
+                            if (send(id, temp.c_str(), temp.size()+1, 0) == -1) {
+                                perror("send");
+                                exit(7);
+                            }
+                        } else {
+                            ss.str("");
+                            ss.clear();
+                            ss << "ID not found " << id << "\nPrivate Message IDs:";
+                            for (const auto& us : sockets)
+                                ss << '\n' << us.first << ':' << us.second;
+                            temp = ss.str();
+                            if (send(sock, temp.c_str(), temp.size()+1, 0) == -1) {
+                                perror("send");
+                                exit(7);
+                            }
+                        }
+                        break;
+                        //show pm ids
+                    } else {
+                        ss.clear();
+                    }
+                    if (ss >> temp) {
+                        if (temp == "list"){
+                            ss.str("");
+                            ss.clear();
+                            ss << "Private Message IDs:";
+                            for (const auto& us : sockets)
+                                ss << '\n' << us.first << ':' << us.second;
+                            temp = ss.str();
+                            if (send(sock, temp.c_str(), temp.size()+1, 0) == -1) {
+                                perror("send");
+                                exit(7);
+                            }
+                        }
+                    }
                 }
             }
             break;
@@ -128,17 +181,12 @@ void recvServer(int sock, const char *buffer, int packetSize) {
                 ss << sock << ' ' << temp;
                 temp = ss.str();
                 for (const auto& fd : sockets) {
-                    auto &t = channels[fd.first];
-                    for (const auto& cd : channels) {
-                        if (cd.first == sock || cd.first == fd.first)
-                            continue;
-                        if (t == cd.second) {
-                                if (send(cd.first, temp.c_str(), temp.size()+1, 0) == -1) {
-                                    perror("send");
-                                    exit(9);
-                                }
-                            }
+                    if (channels[fd.first] == channels[sock] && fd.first != sock) {
+                        if (send(fd.first, temp.c_str(), temp.size()+1, 0) == -1) {
+                            perror("send");
+                            exit(9);
                         }
+                    }
                 }
                 break;
             }

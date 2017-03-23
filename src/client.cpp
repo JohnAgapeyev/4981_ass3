@@ -23,7 +23,6 @@ map<int,string> users;
 
 void client(){
     thread t(listenForPackets, true);
-    users[0] = "Server";
     //those sweet sweet spin locks
     while(!socketfd);
 
@@ -94,6 +93,7 @@ void recvClient(int socket, const char *buffer, int packetSize){
             ss >> temp;
             if (temp == "/userupdate") {
                 users.clear();
+                users[0] = "PM";
                 while(ss >> id >> temp){
                     users[id] = temp;
                     if(!getline(ss,temp)){
