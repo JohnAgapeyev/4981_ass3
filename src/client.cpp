@@ -49,7 +49,7 @@ map<int,string> users;
 void client(){
     thread t(listenForPackets, true);
     //those sweet sweet spin locks
-    while(!socketfd);
+    while(!socketfd.load());
 
     string name;
 

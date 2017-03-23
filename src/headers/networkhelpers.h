@@ -27,6 +27,7 @@
 #ifndef NETWORKHELPERS_H
 #define NETWORKHELPERS_H
 #include <limits.h>
+#include <atomic>
 
 //high port that shouldnt be used
 constexpr int LISTEN_PORT = 45735;
@@ -38,7 +39,7 @@ constexpr int MAXEVENTS = 100;
 //its impossible for any packet to exceede this size so its safe
 constexpr int MAXBUFFER = USHRT_MAX;
 //the socket made and used as the primary in epoll
-extern int socketfd;
+extern std::atomic<int> socketfd;
 
 int createNonblock();
 void makeNonblock(int sock);

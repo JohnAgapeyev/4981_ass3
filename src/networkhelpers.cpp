@@ -16,7 +16,7 @@
 #include <map>
 
 char buffer[MAXBUFFER];
-int socketfd = 0;
+std::atomic<int> socketfd{0};
 
 /*
  *  FUNCTION:
