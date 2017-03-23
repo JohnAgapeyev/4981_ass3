@@ -20,10 +20,60 @@ using namespace std;
 map<int, string> sockets;
 map<int, string> channels;
 
+
+
+/*
+ *  FUNCTION:
+ *  server
+ *  --
+ *  DATE:
+ *  march 20, 2017
+ *  --
+ *  DESIGNER:
+ *  isaac morneau
+ *  --
+ *  PROGRAMMER:
+ *  isaac morneau
+ *  --
+ *  INTERFACE:
+ *  void server();
+ *  --
+ *  RETURNS:
+ *  void
+ *  --
+ *  NOTES:
+ *  for consistancy in main, it only calls listenforPackets
+ *  
+ */
 void server() {
     listenForPackets(false);
 }
 
+
+/*
+ *  FUNCTION:
+ *  listenSock
+ *  --
+ *  DATE:
+ *  march 20, 2017
+ *  --
+ *  DESIGNER:
+ *  isaac morneau
+ *  --
+ *  PROGRAMMER:
+ *  isaac morneau
+ *  --
+ *  INTERFACE:
+ *  void listenSock(int socket);
+ *  int socket - the socket to bind and listen to
+ *  --
+ *  RETURNS:
+ *  void
+ *  --
+ *  NOTES:
+ *  a client has left, remove its channel and socket settings
+ *  
+ */
 void listenSock(int socket){
     struct sockaddr_in addr;
     memset(&addr, 0, sizeof(addr));
@@ -42,11 +92,71 @@ void listenSock(int socket){
     }
 }
 
+/*
+ *  FUNCTION:
+ *  closeServer
+ *  --
+ *  DATE:
+ *  march 20, 2017
+ *  --
+ *  DESIGNER:
+ *  isaac morneau
+ *  --
+ *  PROGRAMMER:
+ *  isaac morneau
+ *  --
+ *  INTERFACE:
+ *  void closeServer(int socket);
+ *  int socket -  the socket that was just closed
+ *  --
+ *  RETURNS:
+ *  void
+ *  --
+ *  NOTES:
+ *  a client has left, remove its channel and socket settings
+ *  
+ */
 void closeServer(int sock){
     sockets.erase(sock);
     channels.erase(sock);
 }
 
+
+/*
+ *  FUNCTION:
+ *  recvServer
+ *  --
+ *  DATE:
+ *  march 20, 2017
+ *  --
+ *  DESIGNER:
+ *  isaac morneau
+ *  --
+ *  PROGRAMMER:
+ *  isaac morneau
+ *  --
+ *  INTERFACE:
+ *  void recvServer(int socket, const char *buffer, int packetSize);
+ *  int socket - the socket the message is from
+ *  const char *buffer - the raw data that was read from the buffer
+ *  int packetSize - the size of the packet that was read in
+ *  --
+ *  RETURNS:
+ *  void
+ *  --
+ *  NOTES:
+ *  This is the function that implements the server logic
+ *  the most basic generalization is command vs raw message
+ *  commands are all prefixed with /
+ *  the implemented commands are:
+ *      /ips - list all usernames and their ips
+ *      /channels list - list all usernames and their current channel
+ *      /channels [channel name] - switch to [channel name]
+ *      /pm list - list all usernames wih private message ids
+ *      /pm [id] message ... - send [id] the message
+ *  the format for messages that are not commands is `id message...`
+ *  
+ */
 void recvServer(int sock, const char *buffer, int packetSize) {
     string temp(buffer);
     stringstream ss(temp);
@@ -176,6 +286,7 @@ void recvServer(int sock, const char *buffer, int packetSize) {
                 }
             }
             break;
+            //normal message
         default:
             {
                 ss << sock << ' ' << temp;

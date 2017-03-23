@@ -18,6 +18,31 @@
 char buffer[MAXBUFFER];
 int socketfd = 0;
 
+/*
+ *  FUNCTION:
+ *  createNonblock
+ *  --
+ *  DATE:
+ *  march 20, 2017
+ *  --
+ *  DESIGNER:
+ *  John Agapayev
+ *  isaac morneau
+ *  --
+ *  PROGRAMMER:
+ *  John Agapayev
+ *  isaac morneau
+ *  --
+ *  INTERFACE:
+ *  int createNonblock();
+ *  --
+ *  RETURNS:
+ *  int the file descriptor of the new socket
+ *  --
+ *  NOTES:
+ *  a shortcut for making nonblocking address reusing sockets
+ *  
+ */
 int createNonblock() {
     int sock;
     const int on = 1;
@@ -38,6 +63,32 @@ int createNonblock() {
     return sock;
 }
 
+
+
+/*
+ *  FUNCTION:
+ *  makeNonblock
+ *  --
+ *  DATE:
+ *  march 20, 2017
+ *  --
+ *  DESIGNER:
+ *  isaac morneau
+ *  --
+ *  PROGRAMMER:
+ *  isaac morneau
+ *  --
+ *  INTERFACE:
+ *  void makeNonblock(int sock);
+ *  sock - the socket to make nonblocking
+ *  --
+ *  RETURNS:
+ *  void
+ *  --
+ *  NOTES:
+ *  a shortcut for making sockets returned from accept nonblocking
+ *  
+ */
 void makeNonblock(int sock) {
     if(fcntl(sock,F_SETFL, O_NONBLOCK) == -1){
         perror("fcntl(O_NONBLOCK) failed");
@@ -46,6 +97,37 @@ void makeNonblock(int sock) {
     }
 }
 
+
+/*
+ *  FUNCTION:
+ *  listenForPackets
+ *  --
+ *  DATE:
+ *  march 20, 2017
+ *  --
+ *  DESIGNER:
+ *  John Agapayev
+ *  --
+ *  PROGRAMMER:
+ *  John Agapayev
+ *  isaac morneau
+ *  --
+ *  INTERFACE:
+ *  void listenForPackets(bool isClient) {
+ *  bool isClient - true if its running in client mode
+ *  --
+ *  RETURNS:
+ *  void
+ *  --
+ *  NOTES:
+ *  This functions as the epoll event handler as well as shared abstraction
+ *  for the server and client functions. It registers events the required epoll
+ *  structures then calls the client or server handlers depending on if its in
+ *  client mode
+ *  
+ *  closing a socket or recveiving data will trigger a client or server handler
+ *  
+ */
 void listenForPackets(bool isClient) {
     int epollfd;
     epoll_event evl;
@@ -100,7 +182,7 @@ void listenForPackets(bool isClient) {
                     perror("getsockopt");
                     close(events[i].data.fd);
                     if(isClient)
-                        closeClient(events[i].data.fd);
+                        closeClient();
                     else
                         closeServer(events[i].data.fd);
                     continue;
@@ -110,7 +192,7 @@ void listenForPackets(bool isClient) {
                     perror("connection failure");
                     close(events[i].data.fd);
                     if(isClient)
-                        closeClient(events[i].data.fd);
+                        closeClient();
                     else
                         closeServer(events[i].data.fd);
                     continue;
@@ -119,7 +201,7 @@ void listenForPackets(bool isClient) {
             } else if (events[i].events & EPOLLHUP) {
                 close(events[i].data.fd);
                 if(isClient)
-                    closeClient(events[i].data.fd);
+                    closeClient();
                 else
                     closeServer(events[i].data.fd);
                 continue;
@@ -157,7 +239,7 @@ void listenForPackets(bool isClient) {
                         exit(8);
                     } else if (nbytes == 0) { // connection closed by peer during read
                         if(isClient)
-                            closeClient(events[i].data.fd);
+                            closeClient();
                         else
                             closeServer(events[i].data.fd);
                     }

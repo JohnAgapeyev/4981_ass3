@@ -19,8 +19,33 @@
 
 using namespace std;
 
+//id, username
 map<int,string> users;
 
+/*
+ *  FUNCTION:
+ *  client
+ *  --
+ *  DATE:
+ *  march 20, 2017
+ *  --
+ *  DESIGNER:
+ *  isaac morneau
+ *  --
+ *  PROGRAMMER:
+ *  isaac morneau
+ *  --
+ *  INTERFACE:
+ *  void main();
+ *  --
+ *  RETURNS:
+ *  void
+ *  --
+ *  NOTES:
+ *  starts the network thread, prompts for connection details then loops
+ *  on user input. it handles the buffering of waiting for user requests.
+ *  
+ */
 void client(){
     thread t(listenForPackets, true);
     //those sweet sweet spin locks
@@ -53,6 +78,31 @@ void client(){
     t.join();
 }
 
+
+/*
+ *  FUNCTION:
+ *  connectSock
+ *  --
+ *  DATE:
+ *  march 20, 2017
+ *  --
+ *  DESIGNER:
+ *  isaac morneau
+ *  --
+ *  PROGRAMMER:
+ *  isaac morneau
+ *  --
+ *  INTERFACE:
+ *  void connectSock(int socket);
+ *  int socket - the socket to connect to
+ *  --
+ *  RETURNS:
+ *  void
+ *  --
+ *  NOTES:
+ *  prompts for hostname and then connects the specified socket to it
+ *  
+ */
 void connectSock(int socket) {
     hostent *server;
     string host;
@@ -80,15 +130,72 @@ void connectSock(int socket) {
     cout << "Connected to server [" << host << ']' << endl;
 }
 
-void closeClient(int socket){
+
+/*
+ *  FUNCTION:
+ *  closeClient
+ *  --
+ *  DATE:
+ *  march 20, 2017
+ *  --
+ *  DESIGNER:
+ *  isaac morneau
+ *  --
+ *  PROGRAMMER:
+ *  isaac morneau
+ *  --
+ *  INTERFACE:
+ *  void closeClient();
+ *  --
+ *  RETURNS:
+ *  void
+ *  --
+ *  NOTES:
+ *  this means that the server was shutdown so just exit the program
+ *  
+ */
+void closeClient(){
     cout << "Server Closed." << endl;
     exit(0);
 }
+
+
+/*
+ *  FUNCTION:
+ *  recvClient
+ *  --
+ *  DATE:
+ *  march 20, 2017
+ *  --
+ *  DESIGNER:
+ *  isaac morneau
+ *  --
+ *  PROGRAMMER:
+ *  isaac morneau
+ *  --
+ *  INTERFACE:
+ *  void recvClient(int socket, const char *buffer, int packetSize);
+ *  int socket - the socket the message is from
+ *  const char *buffer - the raw data that was read from the buffer
+ *  int packetSize - the size of the packet that was read in
+ *  --
+ *  RETURNS:
+ *  void
+ *  --
+ *  NOTES:
+ *  This is the function that implements the client logic
+ *  the most basic generalization is command vs raw message
+ *  commands are all prefixed with /
+ *      these commands have all their logic implemented server side
+ *  the format for messages that are not commands is `id message...`
+ *  
+ */
 void recvClient(int socket, const char *buffer, int packetSize){
     string temp(buffer);
     stringstream ss(temp);
     int id;
     switch(*buffer){
+        //command
         case '/':
             ss >> temp;
             if (temp == "/userupdate") {
@@ -103,6 +210,7 @@ void recvClient(int socket, const char *buffer, int packetSize){
                 }
             }
             break;
+            //normal message
         default:
             ss >> id;
             getline(ss, temp);

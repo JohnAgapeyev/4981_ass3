@@ -5,8 +5,8 @@
  *  PROGRAM: 4981_ass3
  *  --
  *  FUNCTIONS:
- *  void client(const char *host);
- *  void connectSock(int socket, const char *host);
+ *  void client();
+ *  void connectSock(int socket);
  *  void closeClient(int socket);
  *  void recvClient(int socket, const char *buffer, int packetSize);
  *  --
@@ -14,11 +14,9 @@
  *  March 20, 2017
  *  --
  *  DESIGNER:
- *  John Agapeyev
  *  Isaac Morneau
  *  --
  *  PROGRAMMER:
- *  John Agapeyev
  *  Isaac Morneau
  *  --
  *  NOTES:
@@ -33,6 +31,6 @@
 
 void client();
 void connectSock(int socket);
-void closeClient(int socket);
+void closeClient();
 void recvClient(int socket, const char *buffer, int packetSize);
 #endif
