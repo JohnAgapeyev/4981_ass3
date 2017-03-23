@@ -12,6 +12,7 @@
 #include <cstdio>
 #include <map>
 #include <sstream>
+#include <iostream>
 
 using namespace std;
 
@@ -45,21 +46,25 @@ void closeServer(int sock){
 
 void recvServer(int sock, const char *buffer, int packetSize) {
     string temp(buffer);
-    stringstream ss;
+    stringstream ss(temp);
     switch (*buffer) {
         case '/':
             {
-                ss.str(temp);
-                ss.clear();
-
                 ss >> temp;
-                if (temp == "/users") {
+                if (temp == "/ips") {
                     ss.str("");
-                    ss << "0 Current Users:";
-                    for(const auto& us : sockets)
-                        ss << ' ' << us.first << ':' << us.second;
+                    ss.clear();
+                    ss << "Connect users:";
+
+                    struct sockaddr_in addr;
+                    socklen_t len = sizeof(addr);
+
+                    for(const auto& us : sockets) {
+                        getpeername(us.first, (struct sockaddr*)(&addr), &len);
+                        ss << '\n' << us.second << ':' << string(inet_ntoa(addr.sin_addr));
+                    }
+
                     temp = ss.str();
-                    printf("sending userlist %s\n", temp.c_str());
                     if (send(sock, temp.c_str(), temp.size()+1, 0) == -1) {
                         perror("send");
                         exit(7);
@@ -69,20 +74,20 @@ void recvServer(int sock, const char *buffer, int packetSize) {
                     if(temp == "name") {
                         ss >> temp;
                         sockets[sock] = temp;
-                        getline(ss, temp);
-                        sockets[sock] = temp;
+                        if(getline(ss, temp))
+                            sockets[sock] += temp;
 
                         ss.str("");
                         ss.clear();
-                        ss << "/userupdate";
+
+                        ss << "/userupdate ";
                         for(const auto& fd : sockets)
-                            ss << '\n' << fd.first << ' ' << fd.second;
+                            ss << fd.first << ' ' << fd.second << '\n';
                         temp = ss.str();
-                        printf("sending updated client list, %s\n", temp.c_str());
                         for(const auto& fd : sockets) {
                             if (send(fd.first, temp.c_str(), temp.size()+1, 0) == -1) {
                                 perror("send");
-                                exit(8);
+                                exit(7);
                             }
                         }
                     }

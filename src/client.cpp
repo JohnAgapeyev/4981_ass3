@@ -81,13 +81,12 @@ void connectSock(int socket) {
 }
 
 void closeClient(int socket){
-
+    users.erase(socket);
 }
 void recvClient(int socket, const char *buffer, int packetSize){
-    stringstream ss{string{buffer}};
-    string temp;
+    string temp(buffer);
+    stringstream ss(temp);
     int id;
-    
     switch(*buffer){
         case '/':
             ss >> temp;
